@@ -232,7 +232,7 @@ def sandbox_files(src):
     return names, "what git does not ignore"
 
 
-def fingerprint(path):
+def fingerprint(path, names=None):
     # ponytail: size + mtime, not content hashes. An edit that restores both
     # goes unnoticed. Switch to sha256 if that ever matters; it costs a full read.
     path = Path(path)
@@ -240,13 +240,18 @@ def fingerprint(path):
         st = path.stat()
         return {path.name: [st.st_size, st.st_mtime_ns]}
     out = {}
-    for rel in sandbox_files(path)[0]:  # the same files the sandbox gets: the study accounts for no others
+    # the same files the sandbox gets: the study accounts for no others
+    for rel in (sandbox_files(path)[0] if names is None else names):
         try:
             st = (path / rel).lstat()
         except OSError:
             continue
         out[rel] = [st.st_size, st.st_mtime_ns]
     return out
+
+
+def git_gone(target):
+    return bool(target.get("git")) and kept_files(target["path"]) is None
 
 
 def source_changes(run, state):
@@ -257,12 +262,9 @@ def source_changes(run, state):
         if not Path(target["path"]).exists():
             changes.append(f"{target['name']}: target is gone")
             continue
-        if target.get("git") and kept_files(target["path"]) is None:
-            # walking instead would count every ignored file as added
-            changes.append(f"{target['name']}: cannot be compared: git listed its files at the start "
-                           f"and does not run now")
-            continue
-        new = fingerprint(target["path"])
+        # git listed the files at the start; if it does not run now, a walk would count every
+        # ignored file as added. The files known from the start are compared instead.
+        new = fingerprint(target["path"], sorted(old) if git_gone(target) else None)
         for rel in sorted(set(old) | set(new)):
             if rel not in new:
                 changes.append(f"{target['name']}: removed {rel}")
@@ -1296,6 +1298,10 @@ def cmd_check_source(a):
     changes = source_changes(a.run, state)
     for c in changes:
         print(c)
+    for target in state["targets"]:
+        if git_gone(target):
+            print(f"{target['name']}: git does not run now, so files added since the start cannot be seen; "
+                  f"the files it listed at the start were compared")
     print("source unchanged" if not changes else f"SOURCE CHANGED: {len(changes)} difference(s)")
     sys.exit(1 if changes else 0)
 

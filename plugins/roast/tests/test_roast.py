@@ -561,9 +561,12 @@ class RoastScript(unittest.TestCase):
         (src / ".gitignore").write_text("/target/\n")
         subprocess.run(["git", "init", "-q", str(src)], check=True)
         run = run_folder(roast("start", 2, 5, src, "--out", self.tmp / "roasts"))
-        out = roast("check-source", "--run", run, ok=False, env={"PATH": "/nonexistent"})
-        has(out, "repo: cannot be compared: git listed its files at the start and does not run now")
-        self.assertNotIn("added", out)
+        gone = {"PATH": "/nonexistent"}
+        has(roast("check-source", "--run", run, env=gone), "repo: git does not run now", "source unchanged")
+        (src / "main.rs").write_text("fn main() { panic!() }\n")
+        out = roast("check-source", "--run", run, ok=False, env=gone)
+        has(out, "repo: changed main.rs", "SOURCE CHANGED: 1 difference(s)")
+        self.assertNotIn("target/big.bin", out)
 
 
     def test_finding_after_the_attack_is_refused(self):
