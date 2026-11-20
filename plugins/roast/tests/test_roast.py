@@ -559,5 +559,21 @@ class RoastScript(unittest.TestCase):
         self.assertFalse(list((run / "04-findings").iterdir()))
 
 
+    def test_verdict_cannot_rescue_a_failed_proof(self):
+        run = one_file_run(self.tmp, 5)
+        roast("phase", "attack", "--run", run)
+        proof = run / "sandbox" / "_poc" / "A1" / "try.py"
+        proof.write_text("raise SystemExit(0)\n")
+        file_finding(run, proof="sandbox/_poc/A1/try.py")
+        has(roast("verdict", "F-001", "confirmed", "--run", run, ok=False), "verdicts are given in the judge phase")
+        proof.write_text("raise SystemExit(1)\n")  # on clean sources the proof no longer shows the defect
+        roast("phase", "verify", "--run", run)
+        has(roast("verify", "--run", run), "F-001: proof FAILED")
+        roast("phase", "judge", "--run", run)
+        has(roast("verdict", "F-001", "confirmed", "--run", run, ok=False), "F-001 stays unconfirmed")
+        has(roast("verdict", "F-001", "unconfirmed", "--note", "the proof needed a file of its own", "--run", run),
+            "F-001: unconfirmed")
+
+
 if __name__ == "__main__":
     unittest.main()

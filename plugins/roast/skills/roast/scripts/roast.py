@@ -1222,7 +1222,12 @@ def cmd_verdict(a):
     path = Path(a.run) / "04-findings" / f"{a.id}.md"
     if not path.is_file():
         die(f"no such finding: {a.id}")
+    if state["phase"] != "judge":  # a verdict given earlier would spare the finding its re-run on clean sources
+        die(f"verdicts are given in the judge phase; the run is in the {state['phase']} phase", 1)
     head, body = read_finding(path)
+    if a.status == "confirmed" and head.get("proof_result") == "failed":
+        die(f"{a.id} stays unconfirmed: its proof failed when re-run on clean sources. "
+            f"Add a note with the likely reason instead: `verdict {a.id} unconfirmed --note ...`", 1)
     if a.status == "duplicate":
         other = Path(a.run) / "04-findings" / f"{a.duplicate_of}.md"
         if not a.duplicate_of or a.duplicate_of == a.id or not other.is_file():
