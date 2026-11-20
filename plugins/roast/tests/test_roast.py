@@ -637,5 +637,16 @@ class RoastScript(unittest.TestCase):
         has(roast("files", "--run", run, "--piece", "hole", ok=False), "piece `hole` is not in map.json; pieces are: whole")
 
 
+    def test_finding_title_can_come_on_standard_input(self):
+        run = one_file_run(self.tmp, 5)
+        roast("phase", "attack", "--run", run)
+        roast("finding", "new", "--run", run, "--agent", "A1", "--piece", "whole", "--severity", "low",
+              "--category", "design", "--location", "one.txt:1", "--title", "-", "--proof", "none",
+              stdin="the name `admin'--` isn't refused, see $HOME\n" + BODY + EVIDENCE)
+        text = (run / "04-findings" / "F-001.md").read_text(encoding="utf-8")
+        has(text, "title: the name `admin'--` isn't refused, see $HOME", "## What is wrong")
+        self.assertNotIn("title: -", text)
+
+
 if __name__ == "__main__":
     unittest.main()

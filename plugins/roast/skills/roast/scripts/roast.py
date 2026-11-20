@@ -1131,8 +1131,12 @@ def cmd_finding_new(a):
     print(clock(state)[0])
     if state["phase"] != "attack":  # later it would reach the judge without its proof re-run on clean sources
         die(f"findings are filed during the attack; the run is in the {state['phase']} phase", 1)
-    body = stdin_text()
-    if not body:
+    body, title = stdin_text(), a.title
+    if title == "-":  # no quoting can damage a title that comes as the first line of standard input
+        title, _, body = body.partition("\n")
+        if not title.strip():
+            die("with `--title -` the first line of standard input is the title, the body follows it")
+    if not body.strip():
         die("the body of the finding comes on standard input: `## What is wrong` and `## Impact`")
     pieces = read_map(a.run)[0]
     if pieces and a.piece not in piece_ids(pieces):
@@ -1161,7 +1165,7 @@ def cmd_finding_new(a):
         body += f"\n\n## Proof output\n\n```\n$ {proof}\n{output}\n```"
 
     path = allocate(Path(a.run) / "04-findings", "F", ".md")
-    head = {"id": path.stem, "title": one_line(a.title), "severity": a.severity, "status": "open",
+    head = {"id": path.stem, "title": one_line(title), "severity": a.severity, "status": "open",
             "category": a.category, "piece": a.piece, "location": one_line(a.location),
             "agent": a.agent, "found_at": stamp(), "proof": proof,
             "proof_result": "passed" if proof != "none" else "none"}

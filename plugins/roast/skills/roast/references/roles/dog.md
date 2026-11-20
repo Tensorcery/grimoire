@@ -157,6 +157,9 @@ the proof is wrong or the defect is not there.
 - `What is wrong`: the rule, quoted with its source, and what happens
   instead. Write real paths and your real id, not the words `RUN` and
   `AGENT`.
+- `--title`: one line that says what goes wrong. If it holds a single quote,
+  a backtick or a `$`, give `--title -` and put the title on the first line
+  of standard input, before the body.
 - `--severity`: by consequence, from `severity.md`. Between two levels, take
   the lower one and say under Impact what would raise it.
 - `--category`: `correctness`, `security`, `data-loss` and `performance` are
