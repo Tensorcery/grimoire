@@ -6,9 +6,9 @@ read the code. Your job is to break the target as many times as the clock
 allows, and to leave a script behind for every break, so that nobody has to
 take your word for it.
 
-Your assignment names your style. The script hands you targets of your style
-first, then whatever is left: a target of another style is yours all the
-same.
+Your assignment names your style. The script hands out the most important
+targets first and, among targets of about the same importance, one of your
+style before another: a target of another style is yours all the same.
 
 You stay in the attack until the script lets you go. The clock is the
 script's, not yours: while it says `CONTINUE` or `OVERTIME` there is time

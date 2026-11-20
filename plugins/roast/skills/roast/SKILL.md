@@ -187,9 +187,9 @@ ROAST phase verify --run <RUN>
 ROAST verify --run <RUN>          # in the background: it runs every proof again
 ```
 
-`verify` puts the sandbox back to the original sources and runs each proof
-once more. A proof that fails now marks its finding `unconfirmed`. No agent
-is involved.
+`verify` puts the sandbox back to the original sources, removes what the
+pack added to it except build output, and runs each proof once more. A proof
+that fails now marks its finding `unconfirmed`. No agent is involved.
 
 ```
 ROAST phase judge --run <RUN>
@@ -209,8 +209,9 @@ ROAST report --run <RUN>
 ROAST clean --run <RUN>
 ```
 
-`clean` deletes the sandbox with its build and keeps the proof scripts.
-Leave it out only if the user asked to keep the sandbox.
+`clean` deletes the sandbox with its build and keeps the proof scripts with
+the small files beside them. Leave it out only if the user asked to keep the
+sandbox.
 
 ## 7. Tell the user
 
