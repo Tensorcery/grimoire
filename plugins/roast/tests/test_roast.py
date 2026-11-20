@@ -631,5 +631,11 @@ class RoastScript(unittest.TestCase):
         self.assertFalse((self.tmp / "roasts").exists())  # nothing half-made is left behind
 
 
+    def test_files_of_an_unknown_piece_is_an_error(self):
+        run = one_file_run(self.tmp, 5)
+        has(roast("files", "--run", run, "--piece", "whole"), "1 file(s)")
+        has(roast("files", "--run", run, "--piece", "hole", ok=False), "piece `hole` is not in map.json; pieces are: whole")
+
+
 if __name__ == "__main__":
     unittest.main()

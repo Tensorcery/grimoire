@@ -876,6 +876,8 @@ def cmd_files(a):
     state = load(a.run)
     print(clock(state)[0])
     pieces, skipped, _ = read_map(a.run)
+    if a.piece and a.piece not in piece_ids(pieces):
+        die(f"piece `{a.piece}` is not in map.json; pieces are: {', '.join(piece_ids(pieces)) or 'none yet'}")
     shown = lines = 0
     for f in source_files(a.run, state):
         owners = [p["id"] for p in pieces if isinstance(p.get("id"), str) and piece_files(p, [f])]
