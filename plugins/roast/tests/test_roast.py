@@ -447,6 +447,7 @@ class RoastScript(unittest.TestCase):
         roast("sandbox", "--run", run, env=env)
         box = run / "sandbox"
         self.assertTrue(box.is_symlink() and work in box.resolve().parents, box.resolve())
+        first = box.resolve()
         self.assertTrue((box / 'proj' / 'app.py').is_file() and (not (box / 'proj' / '.roast').exists()))
 
         # the run's own files are neither source to study nor a change to the source
@@ -470,9 +471,15 @@ class RoastScript(unittest.TestCase):
         self.assertTrue(not box.is_symlink() and (box / '_poc' / 'A1' / 'p.py').is_file() and (not (box / 'proj').exists()))
         self.assertFalse(any(work.iterdir()), list(work.iterdir()))
 
+        # a move that was interrupted left a part behind: the next call finishes it in the same folder
+        (first / "_poc" / "A1").mkdir(parents=True)
+        (first / "_poc" / "A1" / "p.py").write_text("half a copy")
+
         # a finishing round moves the copy out again and keeps the proof
         roast("sandbox", "--run", run, env=env)
         self.assertTrue(box.is_symlink() and (box / '_poc' / 'A1' / 'p.py').is_file() and (box / 'proj' / 'app.py').is_file())
+        self.assertEqual(box.resolve(), first)
+        self.assertEqual((box / "_poc" / "A1" / "p.py").read_text(), "print('refund accepted -5')\n")
         has(roast("check-source", "--run", run), "source unchanged")
 
 

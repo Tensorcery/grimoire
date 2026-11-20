@@ -13,6 +13,7 @@ STOP (the attack is over). Outside the attack the line reads
 """
 import argparse
 import filecmp
+import hashlib
 import json
 import os
 import re
@@ -699,12 +700,12 @@ def place_sandbox(run):
         Path(os.path.realpath(box)).mkdir(parents=True, exist_ok=True)  # the work folder may have been wiped
     else:
         parent = Path(os.environ.get("ROAST_WORK") or "~/.cache/roast").expanduser()
-        parent.mkdir(parents=True, exist_ok=True)
-        work = Path(tempfile.mkdtemp(prefix=f"{box.parent.name}-", dir=parent))
+        # one folder per run, always the same: a move that was interrupted is finished by the next call
+        work = parent / f"{box.parent.name}-{hashlib.sha1(str(box).encode()).hexdigest()[:8]}"
+        work.mkdir(parents=True, exist_ok=True)
         if box.exists():  # the proof scripts `clean` left behind
-            for child in box.iterdir():
-                shutil.move(str(child), str(work / child.name))
-            box.rmdir()
+            shutil.copytree(box, work, symlinks=True, dirs_exist_ok=True)
+            shutil.rmtree(box)
         box.symlink_to(work)
     return box
 
