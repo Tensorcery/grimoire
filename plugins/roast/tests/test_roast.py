@@ -600,5 +600,17 @@ class RoastScript(unittest.TestCase):
         has(roast("leave", "--run", run, "--agent", "A1", env=relay), "STAY")
 
 
+    def test_timed_out_proof_takes_its_children_along(self):
+        run = one_file_run(self.tmp, 5)
+        roast("phase", "attack", "--run", run)
+        poc = run / "sandbox" / "_poc" / "A1"
+        (poc / "slow.sh").write_text('sleep 60 &\necho $! > "$(dirname "$0")/pid"\nwait\n')
+        out = file_finding(run, proof="sandbox/_poc/A1/slow.sh", ok=False, env={"ROAST_PROOF_TIMEOUT": "1"})
+        has(out, "timed out after 1 s")
+        time.sleep(0.3)
+        with self.assertRaises(ProcessLookupError):
+            os.kill(int((poc / "pid").read_text()), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

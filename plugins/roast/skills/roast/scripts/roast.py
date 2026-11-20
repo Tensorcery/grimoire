@@ -18,6 +18,7 @@ import os
 import re
 import select
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -536,14 +537,23 @@ def run_proof(run, path):
     sandbox = Path(run).resolve() / "sandbox"
     with tempfile.TemporaryDirectory(prefix="roast-proof-") as tmp:
         env = {**os.environ, "ROAST_SANDBOX": str(sandbox), "ROAST_TMP": tmp}
-        try:
-            r = subprocess.run(cmd, cwd=sandbox, env=env, capture_output=True, text=True,
-                               errors="replace", timeout=PROOF_TIMEOUT)
-        except subprocess.TimeoutExpired:
-            return 124, f"timed out after {PROOF_TIMEOUT:g} s"
+        try:  # in a process group of its own, so that whatever the proof started ends with it
+            p = subprocess.Popen(cmd, cwd=sandbox, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                 text=True, errors="replace", start_new_session=True)
         except OSError as e:
             return 126, f"could not be run: {e}"
-    return r.returncode, (r.stdout + r.stderr).strip()[-3000:]
+        try:
+            out, err = p.communicate(timeout=PROOF_TIMEOUT)
+            code, output = p.returncode, (out + err).strip()[-3000:]
+        except subprocess.TimeoutExpired:
+            code, output = 124, f"timed out after {PROOF_TIMEOUT:g} s"
+        finally:
+            try:
+                os.killpg(p.pid, signal.SIGKILL)
+            except OSError:
+                pass  # nothing of the group is left
+            p.communicate()
+    return code, output
 
 
 def added_files(src, dst, names):
