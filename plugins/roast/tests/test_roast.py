@@ -623,5 +623,13 @@ class RoastScript(unittest.TestCase):
         has(roast("check", "study", "--run", run), "study: 0 problem(s)")
 
 
+    def test_minutes_must_be_a_number_one_can_count_with(self):
+        src = self.tmp / "one.txt"
+        src.write_text("x")
+        for bad in ("nan", "inf", "0", "-3"):
+            has(roast("start", 2, bad, src, "--out", self.tmp / "roasts", ok=False), "minutes must be a positive number")
+        self.assertFalse((self.tmp / "roasts").exists())  # nothing half-made is left behind
+
+
 if __name__ == "__main__":
     unittest.main()

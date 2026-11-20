@@ -612,8 +612,8 @@ def restore_sources(run, state):
 def cmd_start(a):
     if a.agents < 1:
         die("agents must be at least 1")
-    if a.minutes <= 0:
-        die("minutes must be positive")
+    if not 0 < a.minutes < float("inf"):  # written so that nan is refused too
+        die("minutes must be a positive number")
 
     paths = [Path(t).expanduser().resolve() for t in (a.targets or ["."])]
     targets_, taken = [], set()
@@ -845,8 +845,8 @@ def cmd_more(a):
     state = load(a.run)
     if a.agents < 1:
         die("agents must be at least 1")
-    if a.minutes is not None and a.minutes <= 0:
-        die("minutes must be positive; leave them out for no time limit")
+    if a.minutes is not None and not 0 < a.minutes < float("inf"):
+        die("minutes must be a positive number; leave them out for no time limit")
     if state["phase"] == "study" and not state.get("rounds"):
         die("this run has not had its first attack yet; go on with `crew`")
     if state["phase"] == "attack" and clock(state)[1] != "STOP":
