@@ -1,0 +1,47 @@
+minimum_pre_commit_version: "3.2.0"
+default_install_hook_types: [pre-commit, pre-push, commit-msg]
+# A hook without `stages` runs at the commit and nowhere else. Left to
+# pre-commit's own default it runs at every installed stage - the file hooks a
+# second time on the message and a third on the push.
+default_stages: [pre-commit]
+
+exclude: ^\.venv/
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: fix-byte-order-marker
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  - repo: local
+    hooks:
+      # The message being written, judged by cz.toml.
+      - id: commit-message
+        name: the commit message follows the convention
+        entry: env -u VIRTUAL_ENV uv run cz check --commit-msg-file
+        language: system
+        stages: [commit-msg]
+
+      # The plugins' own tests, so a broken script is found here rather than
+      # by whoever installs the plugin.
+      - id: roast-tests
+        name: roast tests
+        entry: python3 plugins/roast/tests/test_roast.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]

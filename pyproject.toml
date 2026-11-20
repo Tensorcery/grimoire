@@ -7,4 +7,5 @@ dependencies = []
 [dependency-groups]
 dev = [
     "commitizen>=4.19.3,<5",
+    "pre-commit>=4.6.2,<5",
 ]
