@@ -532,20 +532,50 @@ def run_proof(run, path):
     return r.returncode, (r.stdout + r.stderr).strip()[-3000:]
 
 
+def added_files(src, dst, names):
+    """Files of a sandbox copy that the target does not have and that its build would not make.
+
+    Build output stays, because the proofs need it: with git, whatever the target's own
+    ignore rules cover; without git, whatever lies in a folder the target does not have.
+    """
+    extra = sorted(set(walked_files(dst, SKIP_IN_SANDBOX)) - set(names))
+    if not extra:
+        return []
+    if kept_files(src) is None:
+        # ponytail: no ignore rules to ask, so a new file in a new folder passes for build output.
+        # Record the copy's file list after the scout's build if a target without git ever matters.
+        return [n for n in extra if (src / n).parent.is_dir()]
+    try:
+        r = subprocess.run(["git", "-C", str(src), "check-ignore", "-z", "--stdin"], capture_output=True,
+                           input="\0".join(extra).encode("utf-8", "surrogateescape"), timeout=120)
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    if r.returncode not in (0, 1):  # 0: some are ignored, 1: none is
+        return []
+    ignored = set(r.stdout.decode("utf-8", "surrogateescape").split("\0"))
+    return [n for n in extra if n not in ignored]
+
+
 def restore_sources(run, state):
-    """Put back any target file the pack changed in the sandbox. Returns the paths restored."""
-    restored = []
+    """Make the sandbox copies the original sources again. Returns (paths put back, paths removed)."""
+    restored, removed = [], []
+    box = Path(run) / "sandbox"
     for target in state["targets"]:
-        src, dst = Path(target["path"]), Path(run) / "sandbox" / target["name"]
-        pairs = [(src, dst)] if src.is_file() else [(src / rel, dst / rel) for rel in sandbox_files(src)[0]]
-        for a, b in pairs:
+        src, dst = Path(target["path"]), box / target["name"]
+        names = [] if src.is_file() else sandbox_files(src)[0]
+        for a, b in ([(src, dst)] if src.is_file() else [(src / rel, dst / rel) for rel in names]):
             if not a.is_file() or a.is_symlink():
                 continue
+            if b.is_dir() and not b.is_symlink():  # the pack put a folder where the file was
+                shutil.rmtree(b)
             if not b.is_file() or not filecmp.cmp(a, b, shallow=False):
                 b.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy(a, b)  # not copy2: a fresh mtime makes build tools rebuild from the clean file
-                restored.append(str(b.relative_to(Path(run) / "sandbox")))
-    return restored
+                restored.append(str(b.relative_to(box)))
+        for rel in (added_files(src, dst, names) if src.is_dir() else []):
+            (dst / rel).unlink()
+            removed.append(f"{target['name']}/{rel}")
+    return restored, removed
 
 
 # ----------------------------------------------------------------- commands
@@ -1125,10 +1155,13 @@ def cmd_finding_list(a):
 def cmd_verify(a):
     state = load(a.run)
     print(clock(state)[0])
-    restored = restore_sources(a.run, state)
+    restored, removed = restore_sources(a.run, state)
     if restored:
         print(f"{len(restored)} target file(s) had been changed in the sandbox and were put back: {few(restored)}")
-    write_atomic(Path(a.run) / "05-verify" / "restored.txt", "\n".join(restored) + ("\n" if restored else ""))
+    if removed:
+        print(f"{len(removed)} file(s) the target does not have were removed from the sandbox: {few(removed)}")
+    for name, paths in (("restored", restored), ("removed", removed)):
+        write_atomic(Path(a.run) / "05-verify" / f"{name}.txt", "\n".join(paths) + ("\n" if paths else ""))
     passed = failed = 0
     for path, head, body in findings(a.run):
         if head.get("status") != "open" or head.get("proof", "none") == "none":
@@ -1316,11 +1349,12 @@ def cmd_report(a):
     md.append("## Source integrity\n")
     md.append("The targets match the fingerprint taken at start.\n" if not changes else
               "**The targets changed during the run:**\n\n" + "\n".join(f"- {c}" for c in changes) + "\n")
-    restored = (run / "05-verify" / "restored.txt")
-    if restored.is_file() and restored.read_text(encoding="utf-8").strip():
-        md.append("Files of the sandbox copy that the pack had changed and that were put back before "
-                  "the proofs were re-run:\n\n"
-                  + "\n".join(f"- {r}" for r in restored.read_text(encoding="utf-8").split()) + "\n")
+    for name, what in (("restored", "that the pack had changed and that were put back"),
+                       ("removed", "that the target does not have and that were removed")):
+        listed = run / "05-verify" / f"{name}.txt"
+        if listed.is_file() and listed.read_text(encoding="utf-8").strip():
+            md.append(f"Files of the sandbox copy {what} before the proofs were re-run:\n\n"
+                      + "\n".join(f"- {r}" for r in listed.read_text(encoding="utf-8").splitlines()) + "\n")
     if bad:
         md.append("## Validation problems\n")
         md += [f"- {p}" for p in bad] + [""]

@@ -481,5 +481,28 @@ class RoastScript(unittest.TestCase):
         has(roast("check-source", "--run", run), "source unchanged")
 
 
+    def test_verify_runs_proofs_on_clean_sources(self):
+        """What the pack added to the copy is gone before a proof is run again; build output stays."""
+        tmp = self.tmp
+        src = tmp / "proj"
+        (src / "pkg").mkdir(parents=True)
+        (src / "pkg" / "app.py").write_text("print(1)\n")
+        (src / ".gitignore").write_text("/build/\n")
+        subprocess.run(["git", "init", "-q", str(src)], check=True)
+        run = run_folder(roast("start", 2, 5, src, "--out", tmp / "roasts"))
+        roast("sandbox", "--run", run)
+        box = run / "sandbox" / "proj"
+        (box / "planted.flag").write_text("x")
+        (box / "build").mkdir()
+        (box / "build" / "out.bin").write_text("built")
+        (box / "pkg" / "app.py").unlink()
+        (box / "pkg" / "app.py").mkdir()  # a folder where the file was
+        has(roast("verify", "--run", run), "1 target file(s)", "put back: proj/pkg/app.py",
+            "1 file(s) the target does not have were removed from the sandbox: proj/planted.flag")
+        self.assertEqual((box / "pkg" / "app.py").read_text(), "print(1)\n")
+        self.assertFalse((box / "planted.flag").exists())
+        self.assertTrue((box / "build" / "out.bin").is_file())
+
+
 if __name__ == "__main__":
     unittest.main()
