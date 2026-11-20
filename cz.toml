@@ -3,6 +3,8 @@ name = "cz_conventional_commits"
 # The version is the project's in pyproject.toml; a bump rewrites it and
 # uv.lock.
 version_provider = "uv"
+# The plugin's manifest carries the same version.
+version_files = ["plugins/roast/.claude-plugin/plugin.json:version"]
 version_scheme = "semver"
 tag_format = "v$version"
 annotated_tag = true

@@ -1,6 +1,7 @@
 {
   "name": "roast-skills",
-  "owner": { "name": "local" },
+  "description": "Plugins for Claude Code: roast, an adversarial review by a pack of subagents.",
+  "owner": { "name": "Armontex" },
   "plugins": [
     {
       "name": "roast",
