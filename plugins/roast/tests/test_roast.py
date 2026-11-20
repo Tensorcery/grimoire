@@ -460,5 +460,26 @@ class RoastScript(unittest.TestCase):
         has(roast("check-source", "--run", run), "source unchanged")
 
 
+    def test_links_do_not_lead_back_to_the_original(self):
+        tmp = self.tmp.resolve()
+        src = tmp / "proj"
+        src.mkdir()
+        (src / "real.txt").write_text("original")
+        (tmp / "outside.txt").write_text("outside")
+        os.symlink(src / "real.txt", src / "inside.txt")  # an absolute link into the target itself
+        os.symlink(tmp / "outside.txt", src / "out.txt")  # a link out of the target, to a file
+        os.symlink(tmp / "nowhere", src / "dangling.txt")
+        run = run_folder(roast("start", 2, 5, src, "--out", tmp / "roasts"))
+        has(roast("sandbox", "--run", run), "left out: 1 link")
+        box = run / "sandbox" / "proj"
+        (box / "inside.txt").write_text("changed")
+        (box / "out.txt").write_text("changed")
+        self.assertEqual((box / "real.txt").read_text(), "changed")  # the link leads to the copy's own file
+        self.assertEqual((src / "real.txt").read_text(), "original")
+        self.assertEqual((tmp / "outside.txt").read_text(), "outside")
+        self.assertFalse(os.path.lexists(box / "dangling.txt"))
+        has(roast("check-source", "--run", run), "source unchanged")
+
+
 if __name__ == "__main__":
     unittest.main()

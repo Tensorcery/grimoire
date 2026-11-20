@@ -649,6 +649,26 @@ def place_sandbox(run):
     return box
 
 
+def copy_entry(src, dst, rel):
+    """Copy one file of a target into its sandbox copy. False if it was left out.
+
+    A link is never copied as it is: an absolute one would still lead into the original, and
+    whatever the pack wrote through it in the sandbox would land there.
+    """
+    a, b = src / rel, dst / rel
+    if not a.is_symlink():
+        shutil.copy2(a, b)
+        return True
+    real = Path(os.path.realpath(a))
+    if src in real.parents:  # it stays inside the target: the copy gets a link to its own file
+        os.symlink(os.path.relpath(dst / real.relative_to(src), b.parent), b)
+        return True
+    if real.is_file():  # it leads out of the target: the copy gets the content, not the way out
+        shutil.copy2(real, b)
+        return True
+    return False
+
+
 def cmd_sandbox(a):
     state = load(a.run)
     print(clock(state)[0])
@@ -662,10 +682,14 @@ def cmd_sandbox(a):
         elif src.is_dir():
             names, how = sandbox_files(src)
             dst.mkdir(parents=True)
+            left_out = []
             for rel in names:
                 (dst / rel).parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(src / rel, dst / rel, follow_symlinks=False)
-            print(f"copied: {dst} ({len(names)} files, {how})")
+                if not copy_entry(src, dst, rel):
+                    left_out.append(rel)
+            print(f"copied: {dst} ({len(names) - len(left_out)} files, {how})")
+            if left_out:
+                print(f"left out: {len(left_out)} link(s) that lead out of the target to no file: {few(left_out)}")
         else:
             shutil.copy2(src, dst)
             print(f"copied: {dst}")
