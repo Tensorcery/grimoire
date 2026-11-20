@@ -115,7 +115,7 @@ class RoastScript(unittest.TestCase):
         has(roast("phase", "attack", "--run", run, ok=False),
             "lowercase", "`title` is missing", "`where` must be", "no domain file for `cobol`")
         write_map(run, {"core": ["proj/app.py"]})
-        has(roast("check", "study", "--run", run, ok=False), "2 file(s) belong to no piece", "core: no dossier")
+        has(roast("check", "study", "--run", run, ok=False), "1 file(s) belong to no piece", "core: no dossier")
         write_map(run, {"core": ["proj/app.py"], "lib": ["proj/lib.py"]}, skipped=["proj/node_modules"])
         has(crew(), "at most 7 at once", "read-core | reader | Piece: core", "read-lib | reader | Piece: lib")
         write_dossier(run, "core", ["proj/app.py"])
@@ -132,7 +132,8 @@ class RoastScript(unittest.TestCase):
         has(crew(), "web-1 | researcher | Pieces: lib")
         write_dossier(run, "lib", ["proj/lib.py"])
         out = roast("files", "--run", run)
-        has(out, "1  proj/app.py  [core]", "1  proj/lib.py  [lib]", "0  proj/node_modules/dep.js  [skipped]", "3 file(s), 2 line(s)")
+        has(out, "1  proj/app.py  [core]", "1  proj/lib.py  [lib]", "2 file(s), 2 line(s)")
+        self.assertNotIn("node_modules", out)
         has(roast("files", "--run", run, "--piece", "lib"), "1 file(s), 1 line(s)")
         has(roast("take", "--run", run, "--agent", "A1", "--style", "rules"), "No targets are handed out in the study phase")
 
@@ -513,6 +514,20 @@ class RoastScript(unittest.TestCase):
         run = run_folder(roast("start", 2, 5, repo / "gen", "--out", self.tmp / "roasts"))
         has(roast("sandbox", "--run", run), "(1 files, all but dependency and cache folders)")
         self.assertTrue((run / "sandbox" / "gen" / "code.py").is_file())
+
+
+    def test_target_outside_git_lists_what_the_sandbox_holds(self):
+        src = self.tmp / "proj"
+        (src / "node_modules" / "x").mkdir(parents=True)
+        (src / "node_modules" / "x" / "i.js").write_text("1\n")
+        (src / "app.js").write_text("1\n")
+        run = run_folder(roast("start", 2, 5, src, "--out", self.tmp / "roasts"))
+        roast("sandbox", "--run", run)
+        out = roast("files", "--run", run)
+        has(out, "proj/app.js")
+        self.assertNotIn("node_modules", out)
+        (src / "node_modules" / "x" / "i.js").write_text("reinstalled\n")
+        has(roast("check-source", "--run", run), "source unchanged")
 
 
 if __name__ == "__main__":

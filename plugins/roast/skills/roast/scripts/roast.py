@@ -236,11 +236,8 @@ def fingerprint(path):
     if path.is_file():
         st = path.stat()
         return {path.name: [st.st_size, st.st_mtime_ns]}
-    names = kept_files(path)
-    if names is None:  # not a git work tree: everything except version-control internals
-        names = walked_files(path, VCS_DIRS)
     out = {}
-    for rel in names:
+    for rel in sandbox_files(path)[0]:  # the same files the sandbox gets: the study accounts for no others
         try:
             st = (path / rel).lstat()
         except OSError:
