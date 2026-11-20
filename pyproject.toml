@@ -1,0 +1,10 @@
+[project]
+name = "skills"
+version = "0.1.0"
+requires-python = ">=3.15"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "commitizen>=4.19.3,<5",
+]
