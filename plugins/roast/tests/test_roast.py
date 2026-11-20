@@ -253,8 +253,11 @@ class RoastScript(unittest.TestCase):
         # ---- the judge
         roast("phase", "judge", "--run", run)
         has(crew(), "9 finding(s). Launch one judge:", "judge | judge | all findings")
-        out = roast("crew", "--run", run, env={"ROAST_JUDGE_LOAD": "3"})  # too many for one judge: split by piece
-        has(out, "Launch 2 judges together", "judge-1 | judge | Pieces: core", "judge-2 | judge | Pieces: lib", "judge | judge | summary")
+        # too many for one judge: split by number, a piece's findings side by side
+        out = roast("crew", "--run", run, env={"ROAST_JUDGE_LOAD": "3"})
+        has(out, "Launch 3 judges together", "judge-1 | judge | Findings: F-", "judge-3 | judge | Findings: F-",
+            "judge | judge | summary")
+        self.assertEqual(sum(line.count("F-") for line in out.splitlines() if "| Findings:" in line), 9)
         roast("verdict", "F-001", "confirmed", "--note", "the rule is stated in the README", "--run", run)
         has(roast("verdict", "F-002", "confirmed", "--severity", "medium", "--run", run), "severity medium")
         roast("verdict", "F-003", "duplicate", "--run", run, ok=False)

@@ -199,7 +199,7 @@ ROAST crew --run <RUN>
 `crew` says how many judges the findings need and what each one gets.
 Launch them as it says. When the last one has handed back, run `ROAST
 finding list --run <RUN>`. If a finding is still `open`, continue the judge
-that had its piece with the ids of those findings. If the last judge's
+that had it with the ids of those findings. If the last judge's
 hand-back does not end in `summary: saved`, continue it with: `Save the
 summary with ROAST summary, as your role file says.`
 

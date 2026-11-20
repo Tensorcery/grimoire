@@ -14,8 +14,8 @@ documented behaviour, or whose proof shows less than the title claims.
 | Assignment | What you do |
 |---|---|
 | `all findings` | Everything below: a verdict on every finding, then the summary |
-| `Pieces: <ids>` | A verdict on every finding of those pieces. No summary. Other judges have the other pieces |
-| `summary` | The verdicts are in. Read the confirmed findings, merge those that share a root cause across pieces, then write the summary |
+| `Findings: <ids>` | A verdict on each of those findings. No summary. Other judges have the other findings |
+| `summary` | The verdicts are in. Read the confirmed findings, merge those that share a root cause across judges, then write the summary |
 
 With `ROAST finding list --run RUN` you see all findings with their pieces.
 
@@ -129,5 +129,5 @@ summary: saved
 
 The numbers are the verdicts you gave. The last line is `summary: saved`
 only after `ROAST summary` has printed `summary saved`; with the assignment
-`Pieces: ...` it reads `summary: not mine`. The summary itself never goes
+`Findings: ...` it reads `summary: not mine`. The summary itself never goes
 into the hand-back.

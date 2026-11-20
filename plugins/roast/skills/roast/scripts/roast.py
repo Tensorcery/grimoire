@@ -810,19 +810,16 @@ def cmd_crew(a):
         if not found:
             print("No findings wait for a verdict: no judge is needed. Run `phase report`.")
             return
-        count = {}
-        for _, head, _ in found:
-            count[head.get("piece", "?")] = count.get(head.get("piece", "?"), 0) + 1
-        judges = min(n, len(count), -(-len(found) // JUDGE_LOAD))
+        judges = min(n, -(-len(found) // JUDGE_LOAD))
         if judges <= 1:
             print(f"{len(found)} finding(s). Launch one judge:\njudge | judge | all findings")
             return
-        groups = [[] for _ in range(judges)]
-        for piece in sorted(count, key=lambda x: -count[x]):  # the heaviest piece goes to the lightest judge
-            min(groups, key=lambda g: sum(count[x] for x in g)).append(piece)
+        # in the order of the pieces, so that the findings of one piece stay with one judge where they fit
+        ids = [path.stem for path, head, _ in sorted(found, key=lambda f: (f[1].get("piece", "?"), f[0].stem))]
         print(f"{len(found)} finding(s). Launch {judges} judges together:")
-        for k, group in enumerate(groups, 1):
-            print(f"judge-{k} | judge | Pieces: {' '.join(group)}")
+        for k in range(judges):
+            group = ids[k * len(ids) // judges:(k + 1) * len(ids) // judges]
+            print(f"judge-{k + 1} | judge | Findings: {' '.join(group)}")
         print("When they have all handed back, launch one more:\njudge | judge | summary")
     else:
         print(f"No agents are launched in the {state['phase']} phase.")
