@@ -29,6 +29,8 @@ python3 plugins/roast/tests/test_roast.py
 - `uv run cz bump` raises the version in `pyproject.toml` and in the
   plugin's manifest, and writes the changelog.
 
+MIT, see [LICENSE](LICENSE).
+
 | Folder | What is in it |
 |---|---|
 | `plugins/<name>/` | one plugin: its manifest, its agents, its skill, its tests |
