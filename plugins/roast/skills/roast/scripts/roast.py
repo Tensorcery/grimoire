@@ -254,6 +254,11 @@ def source_changes(run, state):
         if not Path(target["path"]).exists():
             changes.append(f"{target['name']}: target is gone")
             continue
+        if target.get("git") and kept_files(target["path"]) is None:
+            # walking instead would count every ignored file as added
+            changes.append(f"{target['name']}: cannot be compared: git listed its files at the start "
+                           f"and does not run now")
+            continue
         new = fingerprint(target["path"])
         for rel in sorted(set(old) | set(new)):
             if rel not in new:
@@ -593,7 +598,7 @@ def cmd_start(a):
         while name in taken:
             name, n = f"{p.name}-{n}", n + 1
         taken.add(name)
-        targets_.append({"name": name, "path": str(p)})
+        targets_.append({"name": name, "path": str(p), "git": p.is_dir() and kept_files(p) is not None})
 
     if a.out:
         out = Path(a.out).expanduser().resolve()

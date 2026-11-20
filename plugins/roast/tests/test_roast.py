@@ -530,5 +530,19 @@ class RoastScript(unittest.TestCase):
         has(roast("check-source", "--run", run), "source unchanged")
 
 
+    def test_source_check_says_when_git_is_gone(self):
+        """Without git the ignored files must not be reported as added to the source."""
+        src = self.tmp / "repo"
+        (src / "target").mkdir(parents=True)
+        (src / "main.rs").write_text("fn main() {}\n")
+        (src / "target" / "big.bin").write_text("build output")
+        (src / ".gitignore").write_text("/target/\n")
+        subprocess.run(["git", "init", "-q", str(src)], check=True)
+        run = run_folder(roast("start", 2, 5, src, "--out", self.tmp / "roasts"))
+        out = roast("check-source", "--run", run, ok=False, env={"PATH": "/nonexistent"})
+        has(out, "repo: cannot be compared: git listed its files at the start and does not run now")
+        self.assertNotIn("added", out)
+
+
 if __name__ == "__main__":
     unittest.main()
