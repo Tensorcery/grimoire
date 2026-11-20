@@ -57,7 +57,7 @@ For each one:
 |---|---|
 | `confirmed` | the proof shows the claim, and the behaviour breaks a rule the target states or a reasonable user would rely on |
 | `rejected` | the behaviour is documented or intended; or it is on the Not findings list; or the proof does not show the claim; or nothing follows from it |
-| `duplicate` | the same root cause as a finding with a lower id: add `--duplicate-of <that id>` |
+| `duplicate` | the same root cause as another finding, which stays as the original: add `--duplicate-of <its id>` |
 | `unconfirmed` | leave as it is: the script set it because the proof failed on clean sources |
 
 - A finding marked `proof:failed` stays `unconfirmed`. Read
