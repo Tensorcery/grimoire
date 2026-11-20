@@ -648,5 +648,18 @@ class RoastScript(unittest.TestCase):
         self.assertNotIn("title: -", text)
 
 
+    def test_clean_keeps_what_a_proof_needs_beside_it(self):
+        run = one_file_run(self.tmp, 5)
+        roast("phase", "attack", "--run", run)
+        poc = run / "sandbox" / "_poc" / "A1"
+        (poc / "helper.py").write_text("ANSWER = 0\n")
+        (poc / "p.py").write_text("import helper\nraise SystemExit(helper.ANSWER)\n")
+        (poc / "dump.bin").write_bytes(b"x" * 2_000_000)
+        has(file_finding(run, proof="sandbox/_poc/A1/p.py"), "F-001")
+        has(roast("clean", "--run", run), "kept 1 proof script(s) and 2 small file(s) beside them")
+        self.assertTrue((poc / "p.py").is_file() and (poc / "helper.py").is_file())
+        self.assertFalse((poc / "dump.bin").exists() or (run / "sandbox" / "one.txt").exists())
+
+
 if __name__ == "__main__":
     unittest.main()

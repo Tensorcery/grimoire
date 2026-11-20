@@ -32,6 +32,7 @@ RATE = 3  # targets one dog gets through in a minute
 GRACE = 0.5  # share of the asked time by which the attack may run over to finish its list
 RELAY_AFTER = int(os.environ.get("ROAST_RELAY_AFTER", 15))  # targets after which a dog hands over to a fresh one: a long context costs more each step
 JUDGE_LOAD = int(os.environ.get("ROAST_JUDGE_LOAD", 40))  # findings one judge can read with their proofs before its context is full
+KEEP_BESIDE = 1_000_000  # bytes: files up to this size in a kept proof's folder survive `clean`
 NEAR = 5  # lines within which two findings in one file are taken for the same place
 POLL = float(os.environ.get("ROAST_POLL", 5))  # seconds between looks at the list during overtime
 STALL = float(os.environ.get("ROAST_STALL", 900))  # a round with no time limit ends after this long with no result
@@ -1228,12 +1229,20 @@ def cmd_clean(a):
     run = Path(a.run).resolve()
     keep = {run / head["proof"] for _, head, _ in findings(run) if head.get("proof", "none") != "none"}
     keep |= {run / t["done"]["proof"] for t in targets(run) if t["done"] and t["done"].get("proof")}
-    freed = removed = 0
+    homes = {path.parent for path in keep}
+    freed = removed = beside = 0
     for root, dirs, files in os.walk(run / "sandbox", topdown=False):
         for name in files:
             path = Path(root) / name
-            if path not in keep:
-                freed, removed = freed + path.lstat().st_size, removed + 1
+            size = path.lstat().st_size
+            # a proof may import or read what lies in its folder: without that it would not run again
+            helper = size <= KEEP_BESIDE and any(h == path.parent or h in path.parents for h in homes)
+            if path in keep:
+                continue
+            if helper:
+                beside += 1
+            else:
+                freed, removed = freed + size, removed + 1
                 path.unlink()
         for name in dirs:
             path = Path(root) / name
@@ -1247,7 +1256,8 @@ def cmd_clean(a):
         box.unlink()
         if work.is_dir():
             shutil.move(str(work), str(box))
-    print(f"removed {removed} file(s), {freed / 1e6:.0f} MB; kept {len(keep)} proof script(s). "
+    print(f"removed {removed} file(s), {freed / 1e6:.0f} MB; kept {len(keep)} proof script(s) "
+          f"and {beside} small file(s) beside them. "
           f"To run a proof again, run `sandbox` first and build the target as 01-study/target.md says.")
 
 
