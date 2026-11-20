@@ -1075,7 +1075,8 @@ def cmd_take(a):
         if t["claimed_by"]:
             busy[t["piece"]] = busy.get(t["piece"], 0) + 1
     free = sorted((t for t in items if not t["claimed_by"] and (word == "CONTINUE" or t["id"] in chosen)),
-                  # the most important first; within ten points of importance a dog prefers its own style
+                  # the most important first; among targets of the same ten (80 to 89, 70 to 79, ...)
+                  # a dog gets one of its own style before another
                   key=lambda t: (t["id"] not in chosen, -(imp(t) // 10), t["style"] != a.style, -imp(t),
                                  busy.get(t["piece"], 0), t["id"]))
     for t in free:
