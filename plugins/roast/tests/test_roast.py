@@ -267,9 +267,14 @@ class RoastScript(unittest.TestCase):
 
         # ---- the report
         has(roast("check-source", "--run", run), "source unchanged")
+        # no report while a finding waits for its verdict
+        has(roast("phase", "report", "--run", run, ok=False), "4 finding(s) have no verdict yet: F-005, F-006, F-008, F-009")
+        has(roast("report", "--run", run, ok=False), "Run `phase report` first")
+        for late in ("F-005", "F-006", "F-008", "F-009"):
+            roast("verdict", late, "rejected", "--note", "nothing follows from it", "--run", run)
         roast("phase", "report", "--run", run)
         has(roast("report", "--run", run), "targets: 13 on the list | 2 run (1 broke the target, 1 held) | 1 skipped | 10 never tried",
-            "findings: 4 open, 2 confirmed, 1 unconfirmed, 1 rejected, 1 duplicate | 9 in all", "source: unchanged",
+            "findings: 2 confirmed, 1 unconfirmed, 5 rejected, 1 duplicate | 9 in all", "source: unchanged",
             "confirmed by level: critical 0 | high 1 |", "pieces (targets | run | broke the target",
             "attack round 1: 7 agents at once, asked 30 min", ", took ", "studied: 2 piece(s)",
             "to finish the 10 left (", "`more <agents> [<minutes>] --run")
@@ -322,7 +327,7 @@ class RoastScript(unittest.TestCase):
         has(out, "T-010 recorded: skip", "STOP: no new targets")
         has(roast("wait", "--run", run, env={"ROAST_POLL": "0.1"}), "The attack is over")
         roast("phase", "verify", "--run", run), roast("verify", "--run", run), roast("phase", "judge", "--run", run)
-        has(crew(), "5 finding(s). Launch one judge")  # only what has no verdict yet
+        has(crew(), "1 finding(s). Launch one judge")  # only what the judge has not touched yet
         roast("phase", "report", "--run", run)
         out = roast("report", "--run", run)
         has(out, "targets: 13 on the list | 2 run (1 broke the target, 1 held) | 11 skipped | 0 never tried")

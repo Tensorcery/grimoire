@@ -902,6 +902,12 @@ def cmd_phase(a):
                                                "committed": len(chosen), "started": stamp(now)})
         state.pop("rebuild", None)
         started = (len(chosen), len(items))
+    if a.name == "report":
+        waiting = [path.stem for path, head, _ in findings(a.run) if head.get("status") == "open"]
+        if waiting:
+            print(clock(state)[0])
+            die(f"{len(waiting)} finding(s) have no verdict yet: {few(waiting)}. Continue the judge that had "
+                f"them with these ids, then run `phase report` again.", 1)
     state["phase"] = a.name
     save(a.run, state)
     print(clock(state)[0])
@@ -1256,6 +1262,9 @@ def cmd_check_source(a):
 def cmd_report(a):
     state = load(a.run)
     print(clock(state)[0])
+    if state["phase"] != "report":
+        die(f"the report is assembled in the report phase; the run is in the {state['phase']} phase. "
+            f"Run `phase report` first", 1)
     run = Path(a.run)
     items = sorted(findings(run), key=lambda x: (SEVERITIES.index(x[1]["severity"])
                    if x[1].get("severity") in SEVERITIES else len(SEVERITIES), x[0].stem))
