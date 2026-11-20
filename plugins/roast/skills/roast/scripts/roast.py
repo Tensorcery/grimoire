@@ -340,7 +340,12 @@ def files_read(run, pid):
     if not path.is_file():
         return None
     listed = sections(path.read_text(encoding="utf-8")).get("Files read", "")
-    return {re.sub(r"^[-*]\s*`?([^`\s]+)`?.*$", r"\1", line.strip()) for line in listed.splitlines() if line.strip()}
+    out = set()
+    for line in filter(None, map(str.strip, listed.splitlines())):
+        # a path in backticks is taken whole, spaces and all; a bare one ends at the first space
+        m = re.match(r"[-*]\s*`([^`]+)`", line) or re.match(r"[-*]?\s*([^`\s]+)", line)
+        out.add(m.group(1) if m else line)
+    return out
 
 
 def few(items, n=8):

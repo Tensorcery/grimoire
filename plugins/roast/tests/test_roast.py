@@ -612,5 +612,16 @@ class RoastScript(unittest.TestCase):
             os.kill(int((poc / "pid").read_text()), 0)
 
 
+    def test_file_name_with_a_space_can_be_marked_read(self):
+        src = self.tmp / "proj"
+        src.mkdir()
+        (src / "my file.py").write_text("x = 1\n")
+        run = run_folder(roast("start", 2, 5, src, "--out", self.tmp / "roasts"))
+        write_map(run, {"all": ["proj"]})
+        write_dossier(run, "all", ["proj/my file.py"])
+        add_target(run, "all")
+        has(roast("check", "study", "--run", run), "study: 0 problem(s)")
+
+
 if __name__ == "__main__":
     unittest.main()
