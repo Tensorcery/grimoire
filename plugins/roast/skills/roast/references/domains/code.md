@@ -39,6 +39,10 @@ in it, and when no test covers it.
 Structure, layout, maturity and production readiness are a domain of their
 own: `code-design`. Give a piece that domain when the focus asks for those.
 
+Text that an agent or a model follows (skills, prompts, agent definitions,
+role files) is a domain of its own too: `instructions`. Such files get a
+piece of their own, apart from the program they come with.
+
 ## Angles of attack
 
 Each one that applies to a piece becomes a target. "Look for" names the signal.

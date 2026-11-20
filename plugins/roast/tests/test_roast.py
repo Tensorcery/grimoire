@@ -671,5 +671,25 @@ class RoastScript(unittest.TestCase):
         self.assertFalse((poc / "dump.bin").exists() or (run / "sandbox" / "one.txt").exists())
 
 
+    def test_instructions_are_a_domain_of_their_own(self):
+        """A piece of agent instructions passes the study gate; a made-up domain is named with the real ones."""
+        src = self.tmp / "plug"
+        src.mkdir()
+        (src / "tool.py").write_text("print(1)\n")
+        (src / "SKILL.md").write_text("# Skill\nRun tool.py.\n")
+        run = run_folder(roast("start", 2, 5, src, "--out", self.tmp / "roasts"))
+        pieces = [{"id": "tool", "title": "Tool", "where": ["plug/tool.py", "plug/SKILL.md"], "why": "runs", "domain": "code"},
+                  {"id": "texts", "title": "Texts", "where": ["plug/SKILL.md"], "why": "steers", "domain": "instructions"}]
+        (run / "01-study" / "map.json").write_text(json.dumps({"pieces": pieces, "skipped": []}))
+        write_dossier(run, "tool", ["plug/tool.py", "plug/SKILL.md"])
+        write_dossier(run, "texts", ["plug/SKILL.md"])
+        add_target(run, "tool"), add_target(run, "texts")
+        has(roast("check", "study", "--run", run), "study: 0 problem(s)")
+        pieces[1]["domain"] = "prompts"
+        (run / "01-study" / "map.json").write_text(json.dumps({"pieces": pieces, "skipped": []}))
+        has(roast("check", "study", "--run", run, ok=False),
+            "no domain file for `prompts`; available: code, code-design, instructions")
+
+
 if __name__ == "__main__":
     unittest.main()

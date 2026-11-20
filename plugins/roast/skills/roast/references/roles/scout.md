@@ -52,18 +52,31 @@ and hand back the `build:` line.
 - `id`: lowercase letters, digits and hyphens.
 - `where`: files and folders, written as `ROAST files` prints them. A folder
   covers everything under it.
-- `domain`: the name of a file in `SKILL/references/domains/` without `.md`.
-  Read the Surfaces section of `SKILL/references/domains/code.md` for the
-  kinds of pieces worth their own entry.
+- `domain`: what kind of thing the piece is. It names a file in
+  `SKILL/references/domains/`, without `.md`:
+
+  | Domain | The piece is |
+  |---|---|
+  | `code` | a program: its source, its tests, the documents that state its rules |
+  | `instructions` | text that an agent or a model follows: skills, prompts, agent definitions, role files, files like `AGENTS.md` |
+  | `code-design` | structure, layout, maturity or readiness of a program, when the focus asks for them |
+
+  Read the Surfaces section of each domain file you use for the kinds of
+  pieces worth their own entry.
 
 How to cut:
 
 - **As few pieces as the size allows.** One reader reads one piece in full,
   and every reader is a costly agent. Aim at 2,500 to 3,500 lines of a
   piece's own files; a document that sits in several pieces is not counted.
-  A piece under 1,500 lines is merged with its nearest neighbour, and one
-  over 4,000 is split: its reader would run out of room. A target of 14,000
-  lines is four or five pieces, not three and not twelve.
+  A piece under 1,500 lines is merged with its nearest neighbour of the same
+  domain, and one over 4,000 is split: its reader would run out of room. A
+  target of 14,000 lines is four or five pieces, not three and not twelve.
+- **One kind to a piece.** A program and instructions for an agent never
+  share a piece: their readers look for different things, and a reader
+  works through the angles of one domain only. Text that an agent or a
+  model follows gets a piece of its own with the domain `instructions`,
+  however small it is.
 - **Cut along responsibilities**, not by folder: a piece is a group of
   neighbouring things that can be wrong together (parsing and the data it
   produces; the command-line interface and its reports; fetching, caching
@@ -71,7 +84,10 @@ How to cut:
 - **Rules travel with the code they govern.** A document that states rules
   for a piece goes into that piece's `where`, even when it then sits in
   several pieces: the reader of each of them must read it. A design document
-  that governs everything sits in every piece.
+  that governs everything sits in every piece. Instructions that also say
+  what a program does are in both places: in their own piece as the thing
+  under review, and in the `where` of the program's piece as rules the
+  program is held to.
 - **Tests travel with the code they test.**
 - **Every file is in a piece or under `skipped`.** `skipped` is for what
   nobody needs to read line by line: generated files, lockfiles, vendored

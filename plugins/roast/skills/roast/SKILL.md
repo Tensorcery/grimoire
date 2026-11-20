@@ -1,6 +1,6 @@
 ---
 name: roast
-description: "Use when the user asks to roast, tear apart, break or stress-test a code repository, a service or a library, and wants a pack of agents to study it in full and then attack it, with every defect proven by a script. A heavy tool for an occasional deep audit, not for everyday review. Typical requests: '/roast 5 20', 'roast this repo with 10 agents for 30 minutes', 'tear this service apart', 'прожарь этот проект'. Not for a quick review of a diff or a single question about the code."
+description: "Use when the user asks to roast, tear apart, break or stress-test a code repository, a service, a library, or a set of instructions for agents (a skill, a plugin, prompts), and wants a pack of agents to study it in full and then attack it, with every defect in behaviour proven by a script. A heavy tool for an occasional deep audit, not for everyday review. Typical requests: '/roast 5 20', 'roast this repo with 10 agents for 30 minutes', 'tear this service apart', 'roast this skill', 'прожарь этот проект'. Not for a quick review of a diff or a single question about the code."
 ---
 
 # Roast

@@ -31,7 +31,9 @@ Read:
 
 1. `RUN/01-study/target.md`.
 2. `SKILL/references/severity.md`.
-3. Evidence and Not findings in `SKILL/references/domains/code.md`.
+3. Evidence and Not findings in `SKILL/references/domains/code.md`, and in
+   the file of every other domain that a piece in `RUN/01-study/map.json`
+   has.
 4. The output of `ROAST finding list --run RUN` and
    `ROAST status --run RUN`.
 
