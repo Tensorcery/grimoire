@@ -1098,6 +1098,8 @@ def cmd_summary(a):
 def cmd_finding_new(a):
     state = load(a.run)
     print(clock(state)[0])
+    if state["phase"] != "attack":  # later it would reach the judge without its proof re-run on clean sources
+        die(f"findings are filed during the attack; the run is in the {state['phase']} phase", 1)
     body = stdin_text()
     if not body:
         die("the body of the finding comes on standard input: `## What is wrong` and `## Impact`")

@@ -73,6 +73,13 @@ def one_file_run(tmp, minutes):
     return run
 
 
+def file_finding(run, title="negative refund accepted", proof="none", ok=True, **kw):
+    """File a finding about the one-file run; without a proof it is one about what is written."""
+    return roast("finding", "new", "--run", run, "--agent", "A1", "--piece", "whole", "--severity", "low",
+                 "--category", "design" if proof == "none" else "correctness", "--location", "one.txt:1",
+                 "--title", title, "--proof", proof, stdin=BODY + EVIDENCE, ok=ok, **kw)
+
+
 class RoastScript(unittest.TestCase):
     def setUp(self):
         folder = tempfile.TemporaryDirectory()
@@ -542,6 +549,14 @@ class RoastScript(unittest.TestCase):
         out = roast("check-source", "--run", run, ok=False, env={"PATH": "/nonexistent"})
         has(out, "repo: cannot be compared: git listed its files at the start and does not run now")
         self.assertNotIn("added", out)
+
+
+    def test_finding_after_the_attack_is_refused(self):
+        run = one_file_run(self.tmp, 5)
+        roast("phase", "attack", "--run", run)
+        roast("phase", "verify", "--run", run)
+        has(file_finding(run, ok=False), "findings are filed during the attack; the run is in the verify phase")
+        self.assertFalse(list((run / "04-findings").iterdir()))
 
 
 if __name__ == "__main__":
