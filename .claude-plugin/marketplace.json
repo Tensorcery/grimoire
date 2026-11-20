@@ -1,0 +1,11 @@
+{
+  "name": "roast-skills",
+  "owner": { "name": "local" },
+  "plugins": [
+    {
+      "name": "roast",
+      "source": "./plugins/roast",
+      "description": "Adversarial review by a pack of subagents: study the target in full, attack it for a set time, re-run every proof, judge what is left."
+    }
+  ]
+}
