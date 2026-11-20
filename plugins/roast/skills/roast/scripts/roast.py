@@ -398,6 +398,17 @@ def targets(run):
     return out
 
 
+def reported(state, items, agent):
+    """The results an agent has reported in the current round.
+
+    Agent ids start over in every round, and a dog is as old as its own context: what a dog
+    of the same name did in an earlier round does not count against it.
+    """
+    since = (state.get("rounds") or [{}])[-1].get("started", "")
+    return [t["done"] for t in items
+            if t["done"] and t["done"].get("agent") == agent and t["done"].get("at", "") >= since]
+
+
 def show_target(t):
     print(f"{t['id']} | piece: {t['piece']} | style: {t['style']} | importance: {imp(t)}")
     print(f"source: {t['source']}")
@@ -1028,7 +1039,7 @@ def cmd_take(a):
     if held:  # one target in hand at a time: nothing is dropped on the floor
         print(f"You still hold {held[0]['id']}. Finish it and report it with --done before taking another:")
         return show_target(held[0])
-    if sum(1 for t in items if t["done"] and t["done"].get("agent") == a.agent) >= RELAY_AFTER:
+    if len(reported(state, items, a.agent)) >= RELAY_AFTER:
         print(f"RELAY: you have reported {RELAY_AFTER} targets. A fresh dog takes over from here: "
               f"run `leave` and hand back what it prints.")
         return
@@ -1069,7 +1080,7 @@ def cmd_leave(a):
     print(line)
     items = targets(a.run)
     held = [t["id"] for t in items if t["claimed_by"] == a.agent and not t["done"]]
-    mine = [t["done"] for t in items if t["done"] and t["done"].get("agent") == a.agent]
+    mine = reported(state, items, a.agent)
     count = lambda result: sum(1 for d in mine if d.get("result") == result)
     filed = [path.stem for path, head, _ in findings(a.run) if head.get("agent") == a.agent]
     chosen = set(budget(a.run))

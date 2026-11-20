@@ -580,5 +580,22 @@ class RoastScript(unittest.TestCase):
             "F-001: unconfirmed")
 
 
+    def test_relay_counts_one_round_only(self):
+        """A dog of a later round is not sent off for what its namesake did in an earlier one."""
+        run = one_file_run(self.tmp, 5)
+        relay = {"ROAST_RELAY_AFTER": "1"}
+        take = lambda *more: roast("take", "--run", run, "--agent", "A1", "--style", "rules", *more, env=relay)
+        roast("phase", "attack", "--run", run)
+        self.assertEqual(taken(take()), "T-001")
+        has(take("--done", "T-001", "--result", "skip", "--note", "needs a network"), "RELAY: you have reported 1 targets")
+        has(roast("leave", "--run", run, "--agent", "A1", env=relay), "stopped by: relay")
+        roast("phase", "verify", "--run", run)
+        time.sleep(1.1)  # results are stamped to the second
+        roast("more", 2, "--run", run)
+        roast("phase", "attack", "--run", run)
+        self.assertEqual(taken(take()), "T-002")
+        has(roast("leave", "--run", run, "--agent", "A1", env=relay), "STAY")
+
+
 if __name__ == "__main__":
     unittest.main()
