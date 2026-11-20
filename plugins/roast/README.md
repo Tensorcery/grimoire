@@ -8,6 +8,13 @@ It is a heavy tool for an occasional deep audit of a repository, a service,
 a library or a set of instructions for agents. It is not for reviewing a
 diff or answering one question about the code.
 
+## Install
+
+```
+claude plugin marketplace add <the repository: a path or a git URL>
+claude plugin install roast@roast-skills
+```
+
 ## Use
 
 ```
