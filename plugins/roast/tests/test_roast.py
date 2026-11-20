@@ -504,5 +504,16 @@ class RoastScript(unittest.TestCase):
         self.assertTrue((box / "build" / "out.bin").is_file())
 
 
+    def test_target_folder_ignored_by_git_is_still_copied(self):
+        repo = self.tmp / "repo"
+        (repo / "gen").mkdir(parents=True)
+        (repo / "gen" / "code.py").write_text("x = 1\n")
+        (repo / ".gitignore").write_text("/gen/\n")
+        subprocess.run(["git", "init", "-q", str(repo)], check=True)
+        run = run_folder(roast("start", 2, 5, repo / "gen", "--out", self.tmp / "roasts"))
+        has(roast("sandbox", "--run", run), "(1 files, all but dependency and cache folders)")
+        self.assertTrue((run / "sandbox" / "gen" / "code.py").is_file())
+
+
 if __name__ == "__main__":
     unittest.main()

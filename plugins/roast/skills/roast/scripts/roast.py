@@ -209,7 +209,8 @@ def kept_files(path):
              if n and OWN_DIR not in Path(n).parts}
     # ponytail: a submodule is listed as one directory entry and is dropped here.
     # Walk into it if a target with submodules ever needs them in the sandbox.
-    return sorted(n for n in names if (Path(path) / n).is_file() or (Path(path) / n).is_symlink())
+    names = sorted(n for n in names if (Path(path) / n).is_file() or (Path(path) / n).is_symlink())
+    return names or None  # a folder that git ignores as a whole is still a target: walk it
 
 
 def walked_files(path, skip):
