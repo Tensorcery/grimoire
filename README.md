@@ -24,8 +24,11 @@ make lint
 make test
 ```
 
-- `make lint` runs shellcheck on the shell scripts, actionlint on the
-  workflows and zizmor on everything GitHub runs.
+- `make lint` runs yamllint, shellcheck on the shell scripts, actionlint on
+  the workflows, zizmor on everything GitHub runs, and jscpd, which fails
+  on any copied block.
+- Dependabot proposes new versions of the dev tools and of the actions the
+  workflows pin, a week after each release.
 - Commit messages follow Conventional Commits; a hook checks each one
   against `cz.toml`.
 - The lint and the tests run before every push.

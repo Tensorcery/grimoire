@@ -1,0 +1,24 @@
+# A PR per new version: the actions the workflows pin, and the dev tools in
+# uv.lock. A version is proposed once it is a week old: a hijacked release
+# is usually found and pulled before then.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci
+      include: scope
+
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: chore
+      include: scope

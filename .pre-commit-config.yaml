@@ -29,6 +29,18 @@ repos:
 
   - repo: local
     hooks:
+      # Any copy across the repository fails it (.jscpd.json): what two places
+      # share goes to one place. Agent definitions are left out: an agent
+      # gets its own file and nothing else, so each repeats the same opening.
+      # pre-commit brings its own node.
+      - id: jscpd
+        name: jscpd
+        entry: jscpd .
+        language: node
+        additional_dependencies: [jscpd@5.4.3]
+        pass_filenames: false
+        always_run: true
+
       # The message being written, judged by cz.toml.
       - id: commit-message
         name: the commit message follows the convention

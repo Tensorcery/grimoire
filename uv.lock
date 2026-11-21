@@ -165,6 +165,7 @@ dev = [
     { name = "commitizen" },
     { name = "pre-commit" },
     { name = "shellcheck-py" },
+    { name = "yamllint" },
     { name = "zizmor" },
 ]
 
@@ -176,6 +177,7 @@ dev = [
     { name = "commitizen", specifier = ">=4.19.3,<5" },
     { name = "pre-commit", specifier = ">=4.6.2,<5" },
     { name = "shellcheck-py", specifier = ">=0.11.0.1,<0.12" },
+    { name = "yamllint", specifier = ">=1.38.0,<2" },
     { name = "zizmor", specifier = ">=1.32.0,<2" },
 ]
 
@@ -259,6 +261,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/7d/fa/3944b40b07da9ce895c0e6303a5ab7d53da063554f534556b134a54d6093/packaging-26.3.tar.gz", hash = "sha256:94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79", size = 313412, upload-time = "2026-08-04T18:15:28.737Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/63/34/ba1c580383c9eada3711951fef0795c80b829a078d72188184bcab9dd527/packaging-26.3-py3-none-any.whl", hash = "sha256:d7193f7c8e4e93f444fde0262bf90af30e16fa0ad0ad44cb553c87339b23cd1c", size = 129956, upload-time = "2026-08-04T18:15:27.159Z" },
+]
+
+[[package]]
+name = "pathspec"
+version = "1.1.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/5a/82/42f767fc1c1143d6fd36efb827202a2d997a375e160a71eb2888a925aac1/pathspec-1.1.1.tar.gz", hash = "sha256:17db5ecd524104a120e173814c90367a96a98d07c45b2e10c2f3919fff91bf5a", size = 135180, upload-time = "2026-04-27T01:46:08.907Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f1/d9/7fb5aa316bc299258e68c73ba3bddbc499654a07f151cba08f6153988714/pathspec-1.1.1-py3-none-any.whl", hash = "sha256:a00ce642f577bf7f473932318056212bc4f8bfdf53128c78bbd5af0b9b20b189", size = 57328, upload-time = "2026-04-27T01:46:07.06Z" },
 ]
 
 [[package]]
@@ -431,6 +442,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/0d/d9/aef3035a3e3d918eb51e7db454af9e06919f0c5208fa0a9315548fef7734/wrapt-2.5.2-cp315-cp315t-win_amd64.whl", hash = "sha256:7f89423965b23aa62a90bf21c20353056a829ca9a60c01fde9aec9876c99392e", size = 110099, upload-time = "2026-10-29T23:06:19.293Z" },
     { url = "https://files.pythonhosted.org/packages/5f/ea/56eddba6249fae5361b53eb62e2e25ad86cabec4632d943d356aba8dea1b/wrapt-2.5.2-cp315-cp315t-win_arm64.whl", hash = "sha256:fa642d3781c061579cb138773add4a55b16f99de9ebc41603e89a756cf9e62c6", size = 106397, upload-time = "2026-10-29T23:06:20.826Z" },
     { url = "https://files.pythonhosted.org/packages/77/8b/1ea57b936b70f98e8e7620a352578096d778dbee95b262f73c066d210ffb/wrapt-2.5.2-py3-none-any.whl", hash = "sha256:61eb54e9540ea522c2c4752a57549a83d3c67e6704ed708403d28e067aaf90f0", size = 82025, upload-time = "2026-10-29T23:06:38.56Z" },
+]
+
+[[package]]
+name = "yamllint"
+version = "1.38.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pathspec" },
+    { name = "pyyaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/28/a0/8fc2d68e132cf918f18273fdc8a1b8432b60d75ac12fdae4b0ef5c9d2e8d/yamllint-1.38.0.tar.gz", hash = "sha256:09e5f29531daab93366bb061e76019d5e91691ef0a40328f04c927387d1d364d", size = 142446, upload-time = "2026-01-13T07:47:53.276Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/05/92/aed08e68de6e6a3d7c2328ce7388072cd6affc26e2917197430b646aed02/yamllint-1.38.0-py3-none-any.whl", hash = "sha256:fc394a5b3be980a4062607b8fdddc0843f4fa394152b6da21722f5d59013c220", size = 68940, upload-time = "2026-01-13T07:47:51.343Z" },
 ]
 
 [[package]]

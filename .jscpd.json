@@ -1,0 +1,7 @@
+{
+  "threshold": 0,
+  "gitignore": true,
+  "ignore": ["**/uv.lock", "**/LICENSE", "plugins/*/agents/**"],
+  "reporters": ["console"],
+  "absolute": false
+}

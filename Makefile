@@ -18,6 +18,7 @@ install:  ## the tools and the git hooks: once after a clone
 	$(UV) pre-commit install
 
 lint:     ## the static checks: the CI lint job
+	$(UV) yamllint --strict .
 # shellcheck and actionlint fail on an empty list: each runs once it has a file.
 ifneq ($(SCRIPTS),)
 	$(UV) shellcheck --external-sources $(SCRIPTS)
