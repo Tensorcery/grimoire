@@ -149,6 +149,4 @@ The first of them took 21 minutes and launched 9 agents.
 python3 plugins/roast/tests/test_roast.py
 ```
 
-drives the script through whole runs without agents. The design, with what
-the script enforces and why, is in `docs/roast-contract.md` of the
-repository.
+drives the script through whole runs without agents.
