@@ -61,7 +61,8 @@ For each target:
    |---|---|---|
    | `hit` | the proof exits 0 and the finding is filed, by you or by another dog | `--finding F-012` |
    | `miss` | you ran your script and the target behaved correctly | `--proof <the script you ran>`; the note says what came back |
-   | `skip` | it cannot be run in the sandbox at all: it needs a network, a service or hardware that is not there | the note says what is missing |
+   | `skip` | it cannot be run in the sandbox at all: it needs a service or hardware that is not there, or a download that failed | the note gives the command you ran and the error it printed |
+   | `skip` | the script printed `STOP` while you held it | the note says `out of time` |
 
    Reading the code and concluding that it holds is not a `miss`: the code
    the reader looked at seemed right to its author too. Run it.

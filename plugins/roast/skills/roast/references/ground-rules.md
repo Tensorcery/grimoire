@@ -39,6 +39,10 @@ gets the same effort as defects do.
   destructive commands, nothing installed outside the sandbox. Searching the
   web for information is fine, with generic queries only: nothing copied
   from the target goes into a query.
+- The network is there to download what the target's own build and tests
+  need: packages, a toolchain, a tool its checks call. Download and install
+  into the sandbox. Whether the network works is written in `target.md`
+  under `Network`; the scout tried it.
 
 A path of a target file is always written as the script writes it: the
 target's name, then the path inside it, for example `shop/src/refund.py`.

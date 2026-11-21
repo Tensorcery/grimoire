@@ -18,9 +18,13 @@ and hand back the `build:` line.
    specifications, changelog, the manifest, the CI configuration, the help
    text of its commands. Skim the tree far enough to know what each folder
    is for.
-3. Build the target and run its tests in the sandbox. Keep the exact
-   commands that worked. The pack will reuse this build, so leave it in
-   place.
+3. Build the target and run its tests in the sandbox, with the commands the
+   target's own documents give. What they need and the machine does not
+   have (packages, a toolchain, a linter) you download and install into the
+   sandbox. Run one download first and write down what it printed: that is
+   the `Network` section of `target.md`. Use an offline mode of a tool only
+   after that download has failed. Keep the exact commands that worked. The
+   pack will reuse this build, so leave it in place.
 4. Write `RUN/01-study/target.md` (template below).
 5. Write `RUN/01-study/map.json` (rules below).
 6. Run `ROAST files --run RUN` again. Every line must end in a piece id or
@@ -117,12 +121,18 @@ in, how long they take, and where the built program ends up>
 <what is already built, how to call the program from a script, which
 environment variables or scratch folders it needs>
 
+## Network
+<"works" or "does not work", then the download command you ran and the line
+it printed; which of the target's commands download something>
+
 ## Stated limitations
 <what the target's own documents say it does not do or does not guarantee,
 each with its source; these are not defects>
 
 ## Leave alone
-<anything that must not be run, and why: network calls, long jobs, publishing>
+<anything that must not be run, and why: calls to live hosts and services,
+long jobs, publishing. A download of packages for the build does not belong
+here>
 ```
 
 ## Hand-back

@@ -178,9 +178,14 @@ Each one that applies to a piece becomes a target. "Look for" names the signal.
   folders and the history are not copied. The first build therefore starts
   from nothing; build once and reuse it. If the tests need packages, install
   them inside the sandbox only (a virtual environment in your `_poc` folder).
-  If a build or an install needs the network and has none, say so in
-  `target.md` or in the note of your target and go on with what can be shown without
-  it.
+  The same holds for a tool the target's checks call and the machine does
+  not have: install it there and run the check.
+- When a proof needs a whole copy of the target, take the sources only:
+  `git clone -q RUN/sandbox/<target> RUN/sandbox/_poc/AGENT/src`. The copy
+  in the sandbox is a git repository that holds the sources as they were
+  copied, so the clone leaves the build output behind. The build output is
+  gigabytes, and a copy of it fills the disk for the whole pack. Delete
+  your clone when the target is reported.
 - Use a fresh database or data directory for each proof.
 - A proof that needs the service running starts it on a free local port and
   stops it at the end.
