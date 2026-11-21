@@ -14,7 +14,8 @@ permissions: {}
 
 concurrency:
   group: codeql-${{ github.ref }}
-  cancel-in-progress: true
+  # On main every commit keeps its run; a scheduled run is not cut short.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   analyze:

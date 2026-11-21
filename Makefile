@@ -35,8 +35,10 @@ ifndef PRE_COMMIT
 	$(UV) pre-commit run --all-files --show-diff-on-failure
 endif
 
+# PYTHON is the interpreter under test; CI sets it for each version it promises.
+PYTHON ?= python3
 test:     ## the plugins' own tests
-	python3 plugins/roast/tests/test_roast.py
+	$(PYTHON) plugins/roast/tests/test_roast.py
 
 validate: ## the catalog and every plugin, by Claude Code's own validator
 	claude plugin validate .
