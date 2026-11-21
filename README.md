@@ -1,6 +1,7 @@
-# skills
+# grimoire
 
-Plugins for Claude Code.
+Skills, agents and plugins for coding agents. So far it holds one plugin
+for Claude Code.
 
 | Plugin | What it does |
 |---|---|
@@ -10,7 +11,7 @@ Plugins for Claude Code.
 
 ```
 claude plugin marketplace add <this repository: a path or a git URL>
-claude plugin install roast@roast-skills
+claude plugin install roast@tensorcery
 ```
 
 Then, in a session: `/roast:roast 5 20`.

@@ -12,7 +12,7 @@ diff or answering one question about the code.
 
 ```
 claude plugin marketplace add <the repository: a path or a git URL>
-claude plugin install roast@roast-skills
+claude plugin install roast@tensorcery
 ```
 
 ## Use

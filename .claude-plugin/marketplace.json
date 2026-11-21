@@ -1,5 +1,5 @@
 {
-  "name": "roast-skills",
+  "name": "tensorcery",
   "description": "Plugins for Claude Code: roast, an adversarial review by a pack of subagents.",
   "owner": { "name": "Armontex" },
   "plugins": [
