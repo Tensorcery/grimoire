@@ -36,11 +36,20 @@ repos:
         language: system
         stages: [commit-msg]
 
+      # The whole lint, so a red CI run is found here rather than on GitHub.
+      - id: make-lint
+        name: make lint
+        entry: make lint
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+
       # The plugins' own tests, so a broken script is found here rather than
       # by whoever installs the plugin.
       - id: roast-tests
         name: roast tests
-        entry: python3 plugins/roast/tests/test_roast.py
+        entry: make test
         language: system
         pass_filenames: false
         always_run: true

@@ -19,14 +19,16 @@ Then, in a session: `/roast:roast 5 20`.
 ## Working on it
 
 ```
-uv sync
-uv run pre-commit install
-python3 plugins/roast/tests/test_roast.py
+make install
+make lint
+make test
 ```
 
+- `make lint` runs shellcheck on the shell scripts, actionlint on the
+  workflows and zizmor on everything GitHub runs.
 - Commit messages follow Conventional Commits; a hook checks each one
   against `cz.toml`.
-- The tests run before every push.
+- The lint and the tests run before every push.
 - `uv run cz bump` raises the version in `pyproject.toml` and in the
   plugin's manifest, and writes the changelog.
 
@@ -36,3 +38,4 @@ MIT, see [LICENSE](LICENSE).
 |---|---|
 | `plugins/<name>/` | one plugin: its manifest, its agents, its skill, its tests |
 | `docs/` | design notes |
+| `.github/` | workflows, and the scripts they call |
