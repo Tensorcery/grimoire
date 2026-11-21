@@ -70,3 +70,4 @@ MIT, see [LICENSE](LICENSE).
 | `plugins/<name>/` | one plugin: its manifest, its agents, its skill, its tests |
 | `docs/` | design notes |
 | `.github/` | workflows, and the scripts they call |
+| `AGENTS.md` | what holds in this project: read by the agents that work here and by the reviewer of every pull request |

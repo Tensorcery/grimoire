@@ -2,6 +2,7 @@
 # CodeRabbit reviews the pull requests and writes a summary into each
 # description, in place of the line `@coderabbitai summary`. For a release
 # pull request that summary is the draft of the release's description.
+# What it holds a change against is AGENTS.md, which it reads by itself.
 reviews:
   high_level_summary: true
   high_level_summary_instructions: >-
