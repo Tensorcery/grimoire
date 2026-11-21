@@ -419,10 +419,26 @@ def reported(state, items, agent):
             if t["done"] and t["done"].get("agent") == agent and t["done"].get("at", "") >= since]
 
 
+def given_back(t):
+    """Taken by a dog and reported without a run."""
+    return bool(t["done"]) and t["done"].get("result") == "skip"
+
+
+def unfinished(items):
+    """What a finishing round goes after: targets never taken, and targets given back once without a run.
+
+    A target that was not run is not done, whatever the reason was. Given back a second time,
+    in another round, it is closed: it cannot be run here.
+    """
+    return [t for t in items if not t["done"] or (given_back(t) and not t.get("skipped"))]
+
+
 def show_target(t):
     print(f"{t['id']} | piece: {t['piece']} | style: {t['style']} | importance: {imp(t)}")
     print(f"source: {t['source']}")
     print(f"try: {t['text']}")
+    for was in t.get("skipped", []):
+        print(f"given back without a run in an earlier round by {was.get('agent')}: {was.get('note')}")
 
 
 def claim(run, tid, agent):
@@ -856,11 +872,17 @@ def cmd_more(a):
     if state["phase"] == "attack" and clock(state)[1] != "STOP":
         die("the attack is still running")
     folder = Path(a.run) / "02-targets"
-    left = [t for t in targets(a.run) if not t["done"]]
+    left = unfinished(targets(a.run))
     if not left:
         print(clock(state)[0])
-        print("Every target on the list has been tried: nothing is left to finish.")
+        print("Every target on the list has been run, or given back in two rounds: nothing is left to finish.")
         return
+    again = [t for t in left if given_back(t)]
+    for t in again:  # the target goes back on the list and keeps the note of why it was not run
+        kept = read_json(folder / f"{t['id']}.json")
+        kept["skipped"] = [{key: t["done"].get(key) for key in ("agent", "note", "at")}]
+        write_atomic(folder / f"{t['id']}.json", json.dumps(kept, ensure_ascii=False, indent=2))
+        (folder / f"{t['id']}.done.json").unlink()
     for t in left:  # a dog that never reported no longer holds its target
         (folder / f"{t['id']}.claim").unlink(missing_ok=True)
     cleaned = any(not (Path(a.run) / "sandbox" / t["name"]).exists() for t in state["targets"])
@@ -870,7 +892,8 @@ def cmd_more(a):
     save(a.run, state)
     cmd_sandbox(a)
     high = sum(1 for t in left if imp(t) >= 70)
-    print(f"{len(left)} target(s) are left, {high} of them of importance 70 or more. This round: at most {a.agents} agent(s), "
+    print(f"{len(left)} target(s) are left: {len(left) - len(again)} never taken, {len(again)} given back without a run. "
+          f"{high} of them are of importance 70 or more. This round: at most {a.agents} agent(s), "
           + ("no time limit, all of them." if a.minutes is None else f"about {a.minutes:g} minutes."))
     print(f"next: `crew --run {a.run}`")
 
@@ -1428,20 +1451,21 @@ def cmd_report(a):
     write_atomic(run / "REPORT.md", "\n".join(md))
     print(run / "REPORT.md")
     res = lambda r: sum(1 for t in tried if t["done"] and t["done"].get("result") == r)
-    left = sum(1 for t in tried if not t["done"])
+    never, left = sum(1 for t in tried if not t["done"]), unfinished(tried)
     print("Numbers for the closing summary:")
     print(f"targets: {len(tried)} on the list | {res('hit') + res('miss')} run "
-          f"({res('hit')} broke the target, {res('miss')} held) | {res('skip')} skipped | {left} never tried")
+          f"({res('hit')} broke the target, {res('miss')} held) | {res('skip') + never} not run "
+          f"({res('skip')} taken and given back, {never} never taken)")
     print("findings: " + ", ".join(f"{len(by_status(st))} {st}" for st in STATUSES if by_status(st))
           + f" | {len(items)} in all")
     print("confirmed by level: " + " | ".join(
         f"{sev} {sum(1 for _, h, _ in by_status('confirmed') if h.get('severity') == sev)}" for sev in SEVERITIES))
-    print("pieces (targets | run | broke the target | never tried | confirmed findings):")
+    print("pieces (targets | run | broke the target | not run | confirmed findings):")
     for pid in names + sorted({t["piece"] for t in tried} - set(names)):
         group = [t for t in tried if t["piece"] == pid]
         got = lambda *r: sum(1 for t in group if t["done"] and t["done"].get("result") in r)
         print(f"  {pid}: {len(group)} | {got('hit', 'miss')} | {got('hit')} | "
-              f"{sum(1 for t in group if not t['done'])} | "
+              f"{len(group) - got('hit', 'miss')} | "
               f"{sum(1 for _, h, _ in by_status('confirmed') if h.get('piece') == pid)}")
     seconds = lambda text: time.mktime(time.strptime(text, "%Y-%m-%dT%H:%M:%S"))
     ends = sorted(seconds(t["done"]["at"]) for t in tried if t["done"] and t["done"].get("at"))
@@ -1457,8 +1481,8 @@ def cmd_report(a):
           f"whole run so far: {(time.time() - seconds(state['started'])) / 60:.0f} min")
     print(f"source: {'unchanged' if not changes else 'CHANGED'}")
     if left:
-        print(f"to finish the {left} left ({sum(1 for t in tried if not t['done'] and imp(t) >= 70)} of them of "
-              f"importance 70 or more): `more <agents> [<minutes>] --run {run}`; without minutes the pack "
+        print(f"to finish the {len(left)} that a round can still run ({sum(1 for t in left if imp(t) >= 70)} of them "
+              f"of importance 70 or more): `more <agents> [<minutes>] --run {run}`; without minutes the pack "
               f"works until the list is done")
 
 

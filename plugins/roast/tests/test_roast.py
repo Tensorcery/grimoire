@@ -276,11 +276,12 @@ class RoastScript(unittest.TestCase):
         for late in ("F-005", "F-006", "F-008", "F-009"):
             roast("verdict", late, "rejected", "--note", "nothing follows from it", "--run", run)
         roast("phase", "report", "--run", run)
-        has(roast("report", "--run", run), "targets: 13 on the list | 2 run (1 broke the target, 1 held) | 1 skipped | 10 never tried",
+        has(roast("report", "--run", run), "targets: 13 on the list | 2 run (1 broke the target, 1 held) | "
+                                           "11 not run (1 taken and given back, 10 never taken)",
             "findings: 2 confirmed, 1 unconfirmed, 5 rejected, 1 duplicate | 9 in all", "source: unchanged",
             "confirmed by level: critical 0 | high 1 |", "pieces (targets | run | broke the target",
             "attack round 1: 7 agents at once, asked 30 min", ", took ", "studied: 2 piece(s)",
-            "to finish the 10 left (", "`more <agents> [<minutes>] --run")
+            "to finish the 11 that a round can still run (", "`more <agents> [<minutes>] --run")
         report = (run / "REPORT.md").read_text(encoding="utf-8")
         has(report, focus, "## Summary by the judge", "### Verdict", "Two real defects.", "### F-001 [high] t",
             "(was high)", "- F-003 duplicate of F-001", "- F-004 rejected", "### F-007 [high]", "Proof: failed",
@@ -316,27 +317,38 @@ class RoastScript(unittest.TestCase):
         # ---- a later round finishes what is left; with no minutes it has no time limit
         has(roast("more", 0, "--run", run, ok=False), "at least 1")
         out = roast("more", 4, "--run", run)
-        has(out, "copied:", "10 target(s) are left", "no time limit, all of them")
+        # the target that was taken and given back in the first round is not done either
+        has(out, "copied:", "11 target(s) are left: 10 never taken, 1 given back without a run", "no time limit, all of them")
         has(crew(), "scout | scout | rebuild")  # the sandbox was cleaned: it has to be built again
         out = roast("phase", "attack", "--run", run)
-        has(out, "[roast] attack: no time limit, 10 target(s) left | CONTINUE", "This round's list: all 10 target(s) that are left")
+        has(out, "[roast] attack: no time limit, 11 target(s) left | CONTINUE", "This round's list: all 11 target(s) that are left")
         has(crew(), "A4 | dog | Style: failure")
         self.assertTrue('A5' not in crew() and 'rebuild' not in crew())
         has(roast("status", "--run", run, env={"ROAST_STALL": "0"}), "[roast] attack: over | STOP")  # nothing moves: it ends
-        out = take("X1", "rules")
-        for n in range(1, 11):
-            self.assertEqual(taken(out), f'T-{n:03d}', out)
-            out = take("X1", "rules", "--done", f"T-{n:03d}", "--result", "skip", "--note", "needs a network")
-        has(out, "T-010 recorded: skip", "STOP: no new targets")
+        out, got = take("X1", "rules"), []
+        while taken(out):
+            got.append(taken(out))
+            if got[-1] == "T-013":  # the next dog is told why the one before did not run it
+                has(out, "given back without a run in an earlier round by A1:")
+            out = take("X1", "rules", "--done", got[-1], "--result", "skip", "--note", "needs a network")
+        self.assertEqual(sorted(got), [f"T-{n:03d}" for n in range(1, 11)] + ["T-013"])
+        has(out, "recorded: skip", "STOP: no new targets")
         has(roast("wait", "--run", run, env={"ROAST_POLL": "0.1"}), "The attack is over")
         roast("phase", "verify", "--run", run), roast("verify", "--run", run), roast("phase", "judge", "--run", run)
         has(crew(), "1 finding(s). Launch one judge")  # only what the judge has not touched yet
         roast("phase", "report", "--run", run)
         out = roast("report", "--run", run)
-        has(out, "targets: 13 on the list | 2 run (1 broke the target, 1 held) | 11 skipped | 0 never tried")
-        self.assertNotIn('to finish', out, out)
+        has(out, "targets: 13 on the list | 2 run (1 broke the target, 1 held) | "
+                 "11 not run (11 taken and given back, 0 never taken)",
+            "to finish the 10 that a round can still run")  # T-013 was given back in two rounds: it is closed
         has((run / "REPORT.md").read_text(encoding="utf-8"),
-            "12 target(s) committed to; 4 agents at once, no time limit, 10 target(s) committed to")
+            "12 target(s) committed to; 4 agents at once, no time limit, 11 target(s) committed to")
+        has(roast("more", 4, "--run", run), "10 target(s) are left: 0 never taken, 10 given back without a run")
+        roast("phase", "attack", "--run", run)
+        out = take("X2", "rules")
+        while taken(out):
+            out = take("X2", "rules", "--done", taken(out), "--result", "skip", "--note", "needs a network")
+        roast("phase", "verify", "--run", run)
         has(roast("more", 4, "--run", run), "nothing is left to finish")
 
     def test_clock(self):
@@ -606,7 +618,7 @@ class RoastScript(unittest.TestCase):
         time.sleep(1.1)  # results are stamped to the second
         roast("more", 2, "--run", run)
         roast("phase", "attack", "--run", run)
-        self.assertEqual(taken(take()), "T-002")
+        self.assertEqual(taken(take()), "T-001")  # given back in the first round, so it is on the list again
         has(roast("leave", "--run", run, "--agent", "A1", env=relay), "STAY")
 
 

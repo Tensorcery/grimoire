@@ -231,7 +231,9 @@ language, in plain words. The user reads this and nothing else, so say
 | ...of them broke the target | 42 |
 | Distinct defects filed | 30 |
 | Confirmed by the judge | 23 |
-| Checks nobody ran | 220 |
+| Checks not run | 221 |
+| ...taken by a dog and given back | 1 |
+| ...never taken | 220 |
 
 Several checks often hit the same defect, and the judge throws out repeats
 and what is not a defect: that is why 42 became 23.
@@ -242,15 +244,15 @@ Confirmed by level: critical 0, high 0, medium 13, low 10.
 |---|---|---|---|
 | medium | A refund above the charge is accepted | The shop pays out more than it took | `shop/src/refund.py:88` |
 
-| Piece | Checks | Run | Broke the target | Nobody ran | Confirmed defects |
+| Piece | Checks | Run | Broke the target | Not run | Confirmed defects |
 |---|---|---|---|---|---|
-| refunds | 94 | 20 | 14 | 73 | 8 |
+| refunds | 94 | 20 | 14 | 74 | 8 |
 
 3 agents, 5 minutes asked, the attack took 5.1; 3 pieces and 86 files
 studied; the whole run took 41 minutes. The original was not touched.
 
 Full report: `<RUN>/REPORT.md`
-To run the 220 checks that are left (15 of them important):
+To run the 221 checks that were not run (15 of them important):
 `/roast:roast more 5 <RUN>`, or `more 5 20 <RUN>` to cap it at 20 minutes.
 ```
 
@@ -264,16 +266,19 @@ To run the 220 checks that are left (15 of them important):
 - The last paragraph is the lines `attack round`, `studied:` and `source:`.
   If the source line says `CHANGED`, say so in bold as the first line of
   the whole summary, with what changed, from the report's last section.
-- The two closing lines appear only when `report` printed `to finish`.
+- The two closing lines appear only when `report` printed `to finish`, and
+  they give the number that line gives: what a further round can still run.
 
 Add nothing else: no list of the agents, no account of the phases, no
 advice of your own.
 
 ## 8. A finishing round
 
-A run rarely tries its whole list: what did not fit stays on disk as targets
-nobody has taken. The user can send the pack after them later, without a new
-study. The request looks like `more 5`, `more 5 20` or "finish the rest of
+A run rarely gets through its whole list: what did not fit stays on disk as
+targets nobody has taken, and a target that a dog took and gave back without
+running it is not done either. The user can send the pack after both kinds
+later, without a new study. A target given back in two rounds is closed: it
+cannot be run here. The request looks like `more 5`, `more 5 20` or "finish the rest of
 that roast": the first number is the agents, the second, if there is one,
 the minutes. If it names no run folder, take the newest folder under
 `<target>/.roast/artifacts/`; its name is its start time.
