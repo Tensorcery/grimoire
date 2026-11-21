@@ -2,7 +2,7 @@
 # when these pass here.
 
 .DEFAULT_GOAL := help
-.PHONY: help install lint test commits
+.PHONY: help install lint test validate commits
 
 UV := env -u VIRTUAL_ENV uv run
 
@@ -37,6 +37,10 @@ endif
 
 test:     ## the plugins' own tests
 	python3 plugins/roast/tests/test_roast.py
+
+validate: ## the catalog and every plugin, by Claude Code's own validator
+	claude plugin validate .
+	@for plugin in plugins/*/; do claude plugin validate "$$plugin" || exit 1; done
 
 # RANGE is a git revision range; by default, what main does not have yet.
 RANGE ?= origin/main..HEAD

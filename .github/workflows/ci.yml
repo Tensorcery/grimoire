@@ -53,6 +53,21 @@ jobs:
         env:
           PYTHON: ${{ matrix.python }}
 
+  plugins:
+    name: plugin manifests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      # The validator is Claude Code's own; it needs no login. One exact
+      # version, and no lockfile kept for a single tool: the job holds a
+      # read-only token and no secret.
+      - run: npm install --global @anthropic-ai/claude-code@2.1.323  # zizmor: ignore[adhoc-packages]
+      - run: make validate
+
   commits:
     name: commit messages
     # A local hook can be skipped; this cannot. Dependabot writes its own
