@@ -45,8 +45,15 @@ make test
 1. Start the workflow `prepare release` by hand. It raises the version by
    commitizen (in `pyproject.toml`, `uv.lock` and the plugin's manifest),
    writes `CHANGELOG.md` and opens a pull request from `release/v<next>`.
-2. Merge that pull request. On `main` the workflow `release` finds a version
-   without a tag and creates the tag and the GitHub release.
+2. Read the pull request's description and edit it: it is the draft of the
+   release's description, written by a model of GitHub Models from the
+   changelog and the commit messages. When the model cannot be reached, the
+   draft is the changelog section itself.
+3. Merge that pull request. On `main` the workflow `release` finds a version
+   without a tag and creates the tag and the GitHub release, described by
+   what the pull request said at the merge.
+
+`CHANGELOG.md` is commitizen's alone; no model writes into it.
 
 A pull request opened by a workflow does not start CI by itself: close and
 reopen it to run the checks. The repository setting "Allow GitHub Actions to
