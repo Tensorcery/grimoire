@@ -1,27 +1,31 @@
 #!/usr/bin/env bash
 # Bumps the version by commitizen on release/v<next>, pushes the branch and
 # opens its PR into $BASE. cz.toml says what a bump touches: pyproject.toml,
-# uv.lock, the plugin's manifest and CHANGELOG.md, in one commit. The PR's
-# description is the draft of the release's description (release-notes.sh);
-# what stands there at the merge is what release.sh publishes. The tag is
-# left to release.sh too, which makes it on the merge commit.
+# uv.lock, the plugin's manifest and CHANGELOG.md, in one commit.
+#
+# The PR's description is the draft of the release's description: a line
+# that CodeRabbit replaces with its summary (.coderabbit.yaml says how to
+# write it), then the changelog section. What stands there at the merge is
+# what release.sh publishes. The tag is left to release.sh too, which makes
+# it on the merge commit.
 set -euo pipefail
 
-: "${BASE:?}" "${GH_TOKEN:?}"
+: "${BASE:?}" "${GH_TOKEN:?}" "${GITHUB_REF_NAME:?}"
 # auto: commitizen takes the increment from the commits since the last tag.
 increment=${INCREMENT:-auto}
 
+# The workflow can be started on any branch; a release is cut from one.
+if [ "$GITHUB_REF_NAME" != "$BASE" ]; then
+  echo "a release is prepared from $BASE, not from $GITHUB_REF_NAME" >&2
+  exit 1
+fi
+
+# The checkout keeps no token: git asks gh, which has it from GH_TOKEN.
+gh auth setup-git
 # commitizen reads the whole history and the tags, whatever the checkout fetched.
 git fetch --quiet --tags --unshallow 2> /dev/null || git fetch --quiet --tags
 git config user.name 'github-actions[bot]'
 git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-# The checkout keeps no token: git asks gh, which has it from GH_TOKEN.
-gh auth setup-git
-
-# What the release holds, for its description: taken before the bump adds
-# its own commit.
-previous=$(git describe --tags --abbrev=0 --match 'v*' 2> /dev/null || true)
-commits=$(git log --no-merges --format='- %s%n%w(0,2,2)%b' ${previous:+"$previous..HEAD"})
 
 git switch --quiet -c release/next
 args=(--yes --changelog)
@@ -39,10 +43,8 @@ git push --quiet origin "release/v$version"
 # The section commitizen has just written for this version.
 section=$(awk -v head="## v$version" \
   'index($0, head) == 1 { on = 1; next } on && /^## / { exit } on' CHANGELOG.md)
-notes=$(printf 'Changelog:\n%s\n\nCommit messages:\n%s\n' "$section" "$commits" \
-  | FALLBACK=$section "$(dirname "$0")/release-notes.sh")
 
-gh pr create --base "$BASE" --head "release/v$version" --title "bump: v$version" --body-file - << EOF
-<!-- This text becomes the description of the release v$version when the pull request is merged. Edit it here. -->
-$notes
-EOF
+printf '%s\n' \
+  "<!-- This text becomes the description of the release v$version when the pull request is merged. Edit it here. -->" \
+  '@coderabbitai summary' '' '## Changelog' "$section" \
+  | gh pr create --base "$BASE" --head "release/v$version" --title "bump: v$version" --body-file -
