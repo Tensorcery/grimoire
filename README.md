@@ -36,6 +36,9 @@ make test
   request and on `main`: `make lint`, `make test` on Python 3.8 and 3.15,
   `make validate`, which is Claude Code's own check of the catalog and of
   every plugin, and `make commits` on the pull request's commits.
+- CodeQL (`.github/workflows/codeql.yml`) reads the Python and the
+  workflows on every pull request, on `main` and once a week; what it finds
+  is in the repository's Security tab.
 
 ## Releasing
 
