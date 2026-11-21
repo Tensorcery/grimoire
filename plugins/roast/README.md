@@ -54,7 +54,8 @@ A run folder inside the target, `.roast/artifacts/<start time>/`:
 | `01-study/` | what each piece of the target promises and how it works |
 | `02-targets/` | the list of checks, each with its importance and its result |
 
-Add `.roast/` to the target's `.gitignore`, or commit it, as you prefer.
+The run writes `.roast/.gitignore`, so git does not see the folder. Delete
+that file if you want to commit the results.
 
 ## How it works
 
@@ -95,9 +96,20 @@ script and launches agents; it never looks into the target itself.
 
 ## The original stays untouched
 
-Everything is built and run in a copy under `~/.cache/roast`, which is
-deleted at the end. A link in the target is never copied as a link that
-leads back into the original. The target is fingerprinted at the start and
+Everything is built and run in a copy, `sandbox/` in the run folder. The
+copy has a git repository of its own, so a git command run in it does not
+reach yours. While checks are left that a further round can run, the copy
+stays, and `more` goes on in it without a new build; once every check is
+run it is deleted and only the proof scripts remain. `clean --all` deletes
+it at any time.
+
+A copy inside the project is not sealed off from it: a tool that looks for
+its configuration in the folders above finds the project's when the target
+is a subfolder that has none of its own. `ROAST_WORK=<folder>` puts the
+copy there instead, which also helps when the project's disk is full.
+
+A link in the target is never copied as a link that leads back into the
+original. The target is fingerprinted at the start and
 compared at the end, and the summary says whether it changed. The one thing
 a run writes into the target is its own `.roast/` folder. Web searches are
 generic: nothing copied from the target goes into a query.

@@ -658,6 +658,8 @@ def cmd_start(a):
         home = paths[0] if paths[0].is_dir() else paths[0].parent
         run = home / OWN_DIR / "artifacts" / time.strftime("%Y-%m-%d_%H-%M-%S")
     run.mkdir(parents=True, exist_ok=False)
+    if not a.out and not (home / OWN_DIR / ".gitignore").exists():
+        (home / OWN_DIR / ".gitignore").write_text("# what roast keeps here is not part of the project\n*\n")
     for sub in ("00-sources", "01-study", "02-targets", "03-attack", "04-findings", "05-verify"):
         (run / sub).mkdir()
 
@@ -706,18 +708,21 @@ def reuse_study(old, run, prints):
 
 
 def place_sandbox(run):
-    """Make RUN/sandbox. For a run kept inside its target it is a link to a folder outside.
+    """Make RUN/sandbox: a folder of the run, or with ROAST_WORK set a link to a folder under it.
 
-    A copy that sits inside the original is not isolated: git, test runners and build tools
-    look for their configuration in the folders above them and would reach the original.
+    By default the copy lives with the run, so it is found and removed together with it. A
+    copy inside the original is less isolated, though: a tool that looks for its
+    configuration in the folders above it gets past the copy when the copy has no such file
+    (a target that is a subfolder of a repository). ROAST_WORK puts the copy elsewhere:
+    another disk, or strict isolation.
     """
     box = Path(run).resolve() / "sandbox"
-    if OWN_DIR not in box.parts:
-        box.mkdir(exist_ok=True)
-    elif box.is_symlink():
+    if box.is_symlink():
         Path(os.path.realpath(box)).mkdir(parents=True, exist_ok=True)  # the work folder may have been wiped
+    elif not os.environ.get("ROAST_WORK"):
+        box.mkdir(exist_ok=True)
     else:
-        parent = Path(os.environ.get("ROAST_WORK") or "~/.cache/roast").expanduser()
+        parent = Path(os.environ["ROAST_WORK"]).expanduser()
         # one folder per run, always the same: a move that was interrupted is finished by the next call
         work = parent / f"{box.parent.name}-{hashlib.sha1(str(box).encode()).hexdigest()[:8]}"
         work.mkdir(parents=True, exist_ok=True)
@@ -726,6 +731,24 @@ def place_sandbox(run):
             shutil.rmtree(box)
         box.symlink_to(work)
     return box
+
+
+def own_repository(dst):
+    """Give a sandbox copy a git repository of its own, the copied sources being its one commit.
+
+    Without it a git command run in the copy climbs to the repository around it, which is
+    the original when the run is kept inside its target.
+    """
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}  # a hook's GIT_DIR would point elsewhere
+    git = ["git", "-C", str(dst), "-c", "user.name=roast", "-c", "user.email=roast@localhost",
+           "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "-c", "init.defaultBranch=sandbox"]
+    try:
+        for args in (["init", "-q"], ["add", "-A"],
+                     ["commit", "-q", "--no-verify", "--allow-empty", "-m", "the sources as they were copied"]):
+            subprocess.run(git + args, env=env, capture_output=True, timeout=300, check=True)
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return True
 
 
 def copy_entry(src, dst, rel):
@@ -766,6 +789,8 @@ def cmd_sandbox(a):
                 (dst / rel).parent.mkdir(parents=True, exist_ok=True)
                 if not copy_entry(src, dst, rel):
                     left_out.append(rel)
+            if own_repository(dst):
+                how += "; a git repository of its own"
             print(f"copied: {dst} ({len(names) - len(left_out)} files, {how})")
             if left_out:
                 print(f"left out: {len(left_out)} link(s) that lead out of the target to no file: {few(left_out)}")
@@ -1254,6 +1279,12 @@ def cmd_clean(a):
     state = load(a.run)
     print(clock(state)[0])
     run = Path(a.run).resolve()
+    left = unfinished(targets(run))
+    if left and not a.all:  # the next round runs in this copy: without it the scout would build again
+        size = sum(Path(root, name).lstat().st_size for root, _, names in os.walk(run / "sandbox") for name in names)
+        print(f"sandbox: kept, {size / 1e6:.0f} MB, because {len(left)} check(s) can still be run and a "
+              f"further round uses the copy as it is. To remove it now: `clean --all --run {run}`")
+        return
     keep = {run / head["proof"] for _, head, _ in findings(run) if head.get("proof", "none") != "none"}
     keep |= {run / t["done"]["proof"] for t in targets(run) if t["done"] and t["done"].get("proof")}
     homes = {path.parent for path in keep}
@@ -1283,7 +1314,7 @@ def cmd_clean(a):
         box.unlink()
         if work.is_dir():
             shutil.move(str(work), str(box))
-    print(f"removed {removed} file(s), {freed / 1e6:.0f} MB; kept {len(keep)} proof script(s) "
+    print(f"sandbox: removed, {removed} file(s), {freed / 1e6:.0f} MB; kept {len(keep)} proof script(s) "
           f"and {beside} small file(s) beside them. "
           f"To run a proof again, run `sandbox` first and build the target as 01-study/target.md says.")
 
@@ -1515,12 +1546,16 @@ def main():
             ("sandbox", cmd_sandbox, "copy the targets into the run folder"),
             ("status", cmd_status, "phase, clock, targets and findings in numbers"),
             ("crew", cmd_crew, "which agents to launch now: id, role and assignment"),
-            ("clean", cmd_clean, "free the disk: drop the sandbox, keep the proof scripts"),
             ("wait", cmd_wait, "during the attack: sleep until its end, then until the list is done"),
             ("verify", cmd_verify, "put changed sandbox files back and re-run every proof"),
             ("check-source", cmd_check_source, "fail if a target changed since start"),
             ("report", cmd_report, "assemble REPORT.md")):
         sub.add_parser(name, parents=[run], help=text).set_defaults(fn=fn)
+
+    p = sub.add_parser("clean", parents=[run], help="free the disk: drop the sandbox once nothing is left to "
+                                                    "run, keep the proof scripts")
+    p.add_argument("--all", action="store_true", help="drop it even while checks can still be run")
+    p.set_defaults(fn=cmd_clean)
 
     p = sub.add_parser("files", parents=[run], help="lines, path and owning pieces of every target file")
     p.add_argument("--piece", help="only the files of this piece")

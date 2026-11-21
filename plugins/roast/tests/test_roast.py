@@ -112,7 +112,7 @@ class RoastScript(unittest.TestCase):
 
         roast("sandbox", "--run", run)
         box = run / "sandbox" / "proj"
-        self.assertTrue((box / 'app.py').is_file() and (not (box / '.git').exists()) and (not (box / 'node_modules').exists()))
+        self.assertTrue((box / 'app.py').is_file() and (not (box / 'node_modules').exists()))
         poc = run / "sandbox" / "_poc" / "A1"
         poc.mkdir(parents=True)
 
@@ -311,7 +311,7 @@ class RoastScript(unittest.TestCase):
         has(roast("check", "study", "--run", again, ok=False), "1 file(s) belong to no piece", "proj/new.py")
 
         # ---- the disk is freed at the end; the scripts the record points at stay
-        has(roast("clean", "--run", run), "kept 3 proof script(s)")
+        has(roast("clean", "--all", "--run", run), "kept 3 proof script(s)")
         self.assertTrue(not box.exists() and (poc / 'ok.py').is_file() and (poc / 'bad.py').is_file() and (poc / 'dirty.py').is_file())
 
         # ---- a later round finishes what is left; with no minutes it has no time limit
@@ -431,7 +431,9 @@ class RoastScript(unittest.TestCase):
         has(roast("sandbox", "--run", run), "what git does not ignore")
         box = run / "sandbox" / "repo"
         self.assertTrue((box / 'src' / 'main.rs').is_file() and (box / '.gitignore').is_file())
-        self.assertTrue(not (box / 'target').exists() and (not (box / '.git').exists()))
+        self.assertFalse((box / 'target').exists())
+        log = subprocess.run(["git", "-C", str(box), "log", "--format=%s"], capture_output=True, text=True).stdout
+        self.assertEqual(log.strip(), "the sources as they were copied")  # its own history, not the original's
 
         # the study has to account for the kept files only
         write_map(run, {"all": ["repo"]})
@@ -447,7 +449,7 @@ class RoastScript(unittest.TestCase):
         has(roast("check-source", "--run", run, ok=False), "added src/new.rs")
 
     def test_run_inside_the_project(self):
-        """By default the results live in <target>/.roast; the copy that is built and run lives outside it."""
+        """The results live in <target>/.roast; with ROAST_WORK the copy that is built and run lives outside it."""
         tmp = self.tmp
         src, work = tmp / "proj", tmp / "work"
         src.mkdir()
@@ -479,7 +481,7 @@ class RoastScript(unittest.TestCase):
         has(roast("finding", "new", "--run", run, "--agent", "A1", "--piece", "all", "--severity", "high",
                   "--category", "correctness", "--location", "proj/app.py:1", "--title", "negative refund accepted",
                   "--proof", "sandbox/_poc/A1/p.py", "--target", target, stdin=BODY), "F-001")
-        has(roast("clean", "--run", run), "kept 1 proof script(s)")
+        has(roast("clean", "--all", "--run", run), "kept 1 proof script(s)")
         self.assertTrue(not box.is_symlink() and (box / '_poc' / 'A1' / 'p.py').is_file() and (not (box / 'proj').exists()))
         self.assertFalse(any(work.iterdir()), list(work.iterdir()))
 
@@ -546,7 +548,7 @@ class RoastScript(unittest.TestCase):
         (repo / ".gitignore").write_text("/gen/\n")
         subprocess.run(["git", "init", "-q", str(repo)], check=True)
         run = run_folder(roast("start", 2, 5, repo / "gen", "--out", self.tmp / "roasts"))
-        has(roast("sandbox", "--run", run), "(1 files, all but dependency and cache folders)")
+        has(roast("sandbox", "--run", run), "(1 files, all but dependency and cache folders")
         self.assertTrue((run / "sandbox" / "gen" / "code.py").is_file())
 
 
@@ -678,7 +680,7 @@ class RoastScript(unittest.TestCase):
         (poc / "p.py").write_text("import helper\nraise SystemExit(helper.ANSWER)\n")
         (poc / "dump.bin").write_bytes(b"x" * 2_000_000)
         has(file_finding(run, proof="sandbox/_poc/A1/p.py"), "F-001")
-        has(roast("clean", "--run", run), "kept 1 proof script(s) and 2 small file(s) beside them")
+        has(roast("clean", "--all", "--run", run), "kept 1 proof script(s) and 2 small file(s) beside them")
         self.assertTrue((poc / "p.py").is_file() and (poc / "helper.py").is_file())
         self.assertFalse((poc / "dump.bin").exists() or (run / "sandbox" / "one.txt").exists())
 
@@ -701,6 +703,44 @@ class RoastScript(unittest.TestCase):
         (run / "01-study" / "map.json").write_text(json.dumps({"pieces": pieces, "skipped": []}))
         has(roast("check", "study", "--run", run, ok=False),
             "no domain file for `prompts`; available: code, code-design, instructions")
+
+
+    def test_copy_lives_with_the_run_until_nothing_is_left(self):
+        """By default the copy is a folder of the run, cut off from the original's git, and goes when all is run."""
+        src = self.tmp / "proj"
+        src.mkdir()
+        (src / "app.py").write_text("def refund(x):\n    return x\n")
+        subprocess.run(["git", "init", "-q", str(src)], check=True)
+        git = lambda where, *args: subprocess.run(["git", "-C", str(where), *args], capture_output=True, text=True).stdout.strip()
+        run = run_folder(roast("start", 2, 5, src))
+        has(roast("sandbox", "--run", run), "a git repository of its own")
+        box = run / "sandbox"
+        self.assertTrue(box.is_dir() and not box.is_symlink() and (box / "proj" / "app.py").is_file())
+        self.assertEqual(Path(git(box / "proj", "rev-parse", "--show-toplevel")), (box / "proj").resolve())
+        self.assertEqual(git(src, "status", "--porcelain"), "?? app.py")  # the original's git does not see .roast
+
+        write_map(run, {"all": ["proj"]})
+        write_dossier(run, "all", ["proj/app.py"])
+        add_target(run, "all"), add_target(run, "all")
+        roast("phase", "attack", "--run", run)
+        poc = box / "_poc" / "A1"
+        poc.mkdir(parents=True)
+        (poc / "p.py").write_text("raise SystemExit(1)\n")
+        take = lambda *more: roast("take", "--run", run, "--agent", "A1", "--style", "rules", *more)
+        take()
+        take("--done", "T-001", "--result", "miss", "--note", "held", "--proof", "sandbox/_poc/A1/p.py")
+        roast("phase", "verify", "--run", run)
+        has(roast("clean", "--run", run), "sandbox: kept", "because 1 check(s) can still be run")
+        self.assertTrue((box / "proj" / "app.py").is_file())
+
+        has(roast("more", 2, "--run", run), "exists:", "1 target(s) are left")
+        self.assertNotIn("rebuild", roast("crew", "--run", run))  # the copy is still there: nothing to build again
+        roast("phase", "attack", "--run", run)
+        take()
+        take("--done", "T-002", "--result", "miss", "--note", "held", "--proof", "sandbox/_poc/A1/p.py")
+        roast("phase", "verify", "--run", run)
+        has(roast("clean", "--run", run), "sandbox: removed", "kept 1 proof script(s)")
+        self.assertTrue((poc / "p.py").is_file() and not (box / "proj").exists())
 
 
 if __name__ == "__main__":

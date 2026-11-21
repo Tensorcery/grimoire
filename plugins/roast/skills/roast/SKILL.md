@@ -34,10 +34,12 @@ Needs: Python 3.8 or newer, subagents, and a way to run a command in the
 background. The run folder is created with the first target, as
 `<target>/.roast/artifacts/<start time>/`: the study, the targets, the
 findings, the proof scripts and the report stay with the project. The copy
-of the target that is built and run is kept outside the project, under
-`~/.cache/roast`, and needs the disk space of one full build until the run
-is cleaned at the end. If the user names another place for the results, add
-`--out <that folder>` to `start`.
+of the target that is built and run is `<RUN>/sandbox`, with a git
+repository of its own, and needs the disk space of one full build until the
+run is cleaned at the end. If the user names another place for the results,
+add `--out <that folder>` to `start`. If the user wants the copy on another
+disk or away from the project, set `ROAST_WORK=<folder>` in front of every
+`ROAST` command of the run.
 
 `<SKILL>` below is the absolute path of the folder that holds this file,
 `<RUN>` the absolute path of the run folder, and `ROAST` stands for
@@ -209,9 +211,12 @@ ROAST report --run <RUN>
 ROAST clean --run <RUN>
 ```
 
-`clean` deletes the sandbox with its build and keeps the proof scripts with
-the small files beside them. Leave it out only if the user asked to keep the
-sandbox.
+`clean` prints one line that starts with `sandbox:`. While checks can still
+be run it keeps the sandbox, so that a further round needs no new build, and
+says how large it is. Once nothing is left to run it deletes the sandbox
+with its build and keeps the proof scripts with the small files beside them.
+Do not remove a kept sandbox yourself: `ROAST clean --all --run <RUN>` is for
+the user who asks for the disk space now.
 
 ## 7. Tell the user
 
@@ -254,7 +259,13 @@ studied; the whole run took 41 minutes. The original was not touched.
 Full report: `<RUN>/REPORT.md`
 To run the 221 checks that were not run (15 of them important):
 `/roast:roast more 5 <RUN>`, or `more 5 20 <RUN>` to cap it at 20 minutes.
+The working copy with its build (1,800 MB) is kept in `<RUN>/sandbox` for
+that; it is removed by itself once every check is run.
 ```
+
+- The last two lines are the `sandbox:` line of `clean`. When it says
+  `removed`, write instead: `The working copy is removed; the proof scripts
+  are kept.`
 
 - The first table is the lines `targets:` and `findings:`. The sentence
   under it uses the run's own two numbers; leave it out when they are equal.
