@@ -32,6 +32,9 @@ make test
 - Commit messages follow Conventional Commits; a hook checks each one
   against `cz.toml`.
 - The lint and the tests run before every push.
+- CI (`.github/workflows/ci.yml`) runs the same targets on every pull
+  request and on `main`: `make lint`, `make test` on Python 3.8 and 3.15,
+  and `make commits` on the pull request's commits.
 - `uv run cz bump` raises the version in `pyproject.toml` and in the
   plugin's manifest, and writes the changelog.
 

@@ -1,0 +1,76 @@
+# What a change has to pass before it reaches main. Every job runs a make
+# target, so a red run is reproduced on a laptop under the same name.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Nothing by default; a job asks for what it needs.
+permissions: {}
+
+# A newer push to the same branch makes the older run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
+      - run: uv sync --locked
+      - run: make lint
+        env:
+          # zizmor asks GitHub about the actions the workflows pin.
+          GH_TOKEN: ${{ github.token }}
+
+  test:
+    name: test (python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # The oldest Python the plugins promise to run on, and the newest.
+        python: ["3.8", "3.15"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
+      # The plugins use the standard library only: no project to install,
+      # just the interpreter under test in front of `python3`.
+      - run: uv run --no-project --python "$PYTHON" make test
+        env:
+          PYTHON: ${{ matrix.python }}
+
+  commits:
+    name: commit messages
+    # A local hook can be skipped; this cannot. Dependabot writes its own
+    # messages, with links longer than cz.toml allows.
+    if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          # The pull request's own commits, not the merge commit GitHub makes.
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
+      - run: uv sync --locked
+      - run: make commits RANGE="$BASE..$HEAD"
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}

@@ -2,7 +2,7 @@
 # when these pass here.
 
 .DEFAULT_GOAL := help
-.PHONY: help install lint test
+.PHONY: help install lint test commits
 
 UV := env -u VIRTUAL_ENV uv run
 
@@ -37,3 +37,8 @@ endif
 
 test:     ## the plugins' own tests
 	python3 plugins/roast/tests/test_roast.py
+
+# RANGE is a git revision range; by default, what main does not have yet.
+RANGE ?= origin/main..HEAD
+commits:  ## the commit messages of RANGE, judged by cz.toml
+	$(UV) cz check --rev-range '$(RANGE)'
