@@ -21,7 +21,10 @@ gets the same effort as defects do.
 
 - `RUN/sandbox/<target>/` is a copy of each target. Read it, run it, test it.
 - `RUN/sandbox/_poc/AGENT/` is yours: scripts, scratch databases, output
-  files. Create it when you need it.
+  files. Create it when you need it. Put what a proof needs to run again
+  (a helper module, a small input file) in the same folder as the proof:
+  when the run is cleaned, the proof scripts and the files up to 1 MB
+  directly beside them are kept, and every subfolder goes.
 - The copied target files stay as they are: other agents are reading and
   running the same copy at the same moment. To show what a change would do,
   copy the file into your `_poc` folder and change the copy. Build output

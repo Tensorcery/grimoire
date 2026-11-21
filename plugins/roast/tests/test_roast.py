@@ -679,10 +679,13 @@ class RoastScript(unittest.TestCase):
         (poc / "helper.py").write_text("ANSWER = 0\n")
         (poc / "p.py").write_text("import helper\nraise SystemExit(helper.ANSWER)\n")
         (poc / "dump.bin").write_bytes(b"x" * 2_000_000)
+        (poc / "copy" / "src").mkdir(parents=True)  # a dog's own copy of the target: thousands of small files
+        (poc / "copy" / "src" / "a.py").write_text("x = 1\n")
         has(file_finding(run, proof="sandbox/_poc/A1/p.py"), "F-001")
         has(roast("clean", "--all", "--run", run), "kept 1 proof script(s) and 2 small file(s) beside them")
         self.assertTrue((poc / "p.py").is_file() and (poc / "helper.py").is_file())
         self.assertFalse((poc / "dump.bin").exists() or (run / "sandbox" / "one.txt").exists())
+        self.assertFalse((poc / "copy").exists())
 
 
     def test_instructions_are_a_domain_of_their_own(self):

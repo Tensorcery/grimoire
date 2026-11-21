@@ -33,7 +33,7 @@ RATE = 3  # targets one dog gets through in a minute
 GRACE = 0.5  # share of the asked time by which the attack may run over to finish its list
 RELAY_AFTER = int(os.environ.get("ROAST_RELAY_AFTER", 15))  # targets after which a dog hands over to a fresh one: a long context costs more each step
 JUDGE_LOAD = int(os.environ.get("ROAST_JUDGE_LOAD", 40))  # findings one judge can read with their proofs before its context is full
-KEEP_BESIDE = 1_000_000  # bytes: files up to this size in a kept proof's folder survive `clean`
+KEEP_BESIDE = 1_000_000  # bytes: files up to this size directly beside a kept proof survive `clean`
 NEAR = 5  # lines within which two findings in one file are taken for the same place
 POLL = float(os.environ.get("ROAST_POLL", 5))  # seconds between looks at the list during overtime
 STALL = float(os.environ.get("ROAST_STALL", 900))  # a round with no time limit ends after this long with no result
@@ -1293,8 +1293,9 @@ def cmd_clean(a):
         for name in files:
             path = Path(root) / name
             size = path.lstat().st_size
-            # a proof may import or read what lies in its folder: without that it would not run again
-            helper = size <= KEEP_BESIDE and any(h == path.parent or h in path.parents for h in homes)
+            # a proof may import or read what lies beside it: without that it would not run again.
+            # Its subfolders go: a dog's own copy of the target sits there, thousands of small files
+            helper = size <= KEEP_BESIDE and path.parent in homes
             if path in keep:
                 continue
             if helper:
