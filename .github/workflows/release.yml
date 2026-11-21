@@ -1,0 +1,30 @@
+# On main: when the version in pyproject.toml has no tag yet, this makes the
+# tag and the GitHub release. Every other push to main finds the tag and
+# does nothing.
+name: release
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+# Two pushes in a row must not both find the tag missing.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: tag and release a new version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # creates the tag and the release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
+      - run: .github/scripts/release.sh
+        env:
+          GH_TOKEN: ${{ github.token }}

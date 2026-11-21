@@ -34,9 +34,20 @@ make test
 - The lint and the tests run before every push.
 - CI (`.github/workflows/ci.yml`) runs the same targets on every pull
   request and on `main`: `make lint`, `make test` on Python 3.8 and 3.15,
-  and `make commits` on the pull request's commits.
-- `uv run cz bump` raises the version in `pyproject.toml` and in the
-  plugin's manifest, and writes the changelog.
+  `make validate`, which is Claude Code's own check of the catalog and of
+  every plugin, and `make commits` on the pull request's commits.
+
+## Releasing
+
+1. Start the workflow `prepare release` by hand. It raises the version by
+   commitizen (in `pyproject.toml`, `uv.lock` and the plugin's manifest),
+   writes `CHANGELOG.md` and opens a pull request from `release/v<next>`.
+2. Merge that pull request. On `main` the workflow `release` finds a version
+   without a tag and creates the tag and the GitHub release.
+
+A pull request opened by a workflow does not start CI by itself: close and
+reopen it to run the checks. The repository setting "Allow GitHub Actions to
+create and approve pull requests" has to be on.
 
 MIT, see [LICENSE](LICENSE).
 
